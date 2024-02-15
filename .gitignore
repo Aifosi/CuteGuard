@@ -1,0 +1,11 @@
+target
+.bloop
+.metals
+.bsp
+.vscode
+metals.sbt
+user.sbt
+*.sc
+*.worksheet.sc
+.idea
+/**/application.conf
