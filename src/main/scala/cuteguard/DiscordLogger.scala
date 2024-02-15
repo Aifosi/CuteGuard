@@ -48,9 +48,13 @@ open class DiscordLogger protected (
 
 object DiscordLogger:
   def getChannel(discord: Discord, chanelName: String, id: Option[DiscordID])(using Logger[IO]): IO[Option[Channel]] =
-    id.flatTraverse { id =>
-      discord.channelByID(id).toOption.flatTapNone(Logger[IO].debug(s"$chanelName channel not configured.")).value
-    }
+    (for
+      id      <- OptionT.fromOption(id).flatTapNone(Logger[IO].debug(s"$chanelName channel not configured."))
+      channel <- discord
+                   .channelByID(id)
+                   .toOption
+                   .flatTapNone(Logger[IO].debug(s"No channel with id $id found to assign for $chanelName channel."))
+    yield channel).value
 
   def create: IO[DiscordLogger] =
     for

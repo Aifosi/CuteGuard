@@ -18,12 +18,10 @@ services:
     image: aifosi/cuteguard
     user: root
     restart: "unless-stopped"
-    ports:
-      - "80:80"
     depends_on:
       db:
         condition: service_healthy
     environment:
       DB_HOSTNAME: "db"
     volumes:
-      - "./lurch/src/main/resources/application.conf:/opt/docker/conf/application.conf"
+      - "./src/main/resources/application.conf:/opt/docker/conf/application.conf"

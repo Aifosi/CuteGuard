@@ -1,7 +1,7 @@
 package cuteguard
 
 import cuteguard.Bot.Builder
-import cuteguard.commands.{AnyCommand, AnyMessage}
+import cuteguard.commands.*
 import cuteguard.db.CuteGuardUserRepository
 import cuteguard.model.Discord
 
@@ -9,7 +9,7 @@ import cats.effect.{Deferred, IO, IOApp}
 import doobie.{LogHandler, Transactor}
 import org.typelevel.log4cats.Logger
 
-//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=applications.commands&permissions=268438528
+//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications.commands&permissions=268438528
 object Cuteguard extends IOApp.Simple:
 
   private def commanderBuilder(
@@ -23,6 +23,8 @@ object Cuteguard extends IOApp.Simple:
 
       val commands: List[AnyCommand] = List(
         AnyMessage(points, config.pointsPerMessage),
+        PointsGet(cuteGuardUserRepository),
+        PointsSet(cuteGuardUserRepository),
       )
 
       Commander(discordLogger, commands, discordLogger.complete(_, config))

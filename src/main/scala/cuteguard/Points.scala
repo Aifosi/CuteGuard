@@ -37,7 +37,7 @@ class Points(
       ranks        <- ranks
       currentRoles <-
         ranks.parUnorderedFlatTraverse((_, role) => user.hasRole(user.guild, role).map(Option.when(_)(role).toList))
-      _             = ranks.rankForPoints(totalPoints).fold(user.removeRoles(currentRoles)) { rankForPoints =>
+      _            <- ranks.rankForPoints(totalPoints).fold(user.removeRoles(currentRoles)) { rankForPoints =>
                         for
                           _ <- IO.unlessA(currentRoles.contains(rankForPoints))(user.addRole(channel, rankForPoints))
                           _ <- user.removeRoles(currentRoles.filter(_ != rankForPoints))
@@ -77,7 +77,8 @@ object Points:
         _      <- discordLogger.logToChannel(message)
       yield ()
 
-    def removeRoles(roles: List[Role])(using Logger[IO]): IO[Unit] = roles.parTraverse_(user.removeRole)
+    def removeRoles(roles: List[Role])(using Logger[IO]): IO[Unit] =
+      roles.parTraverse_(user.removeRole)
 
   extension (ranks: List[(Int, Role)])
     def rankForPoints(points: Int): Option[Role] = ranks.sortBy(_(0)).foldLeft(None) {

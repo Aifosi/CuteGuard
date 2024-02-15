@@ -20,7 +20,7 @@ object Bot:
     val acquire = IO {
       JDABuilder
         .createDefault(token)
-        .enableIntents(GatewayIntent.GUILD_MEMBERS)
+        .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
         .addEventListeners(messageListener)
         .build()
         .awaitReady()
@@ -82,5 +82,6 @@ object Bot:
       _                         <- discordDeferred.complete(discord)
       _                         <- commander.onDiscordAcquired(discord)
       _                         <- commanderWithDefaults.registerSlashCommands(discord).start
+      _                         <- IO.never
       _                         <- releaseDiscord
     yield ()
