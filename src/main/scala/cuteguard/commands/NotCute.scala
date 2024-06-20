@@ -10,7 +10,7 @@ import org.typelevel.log4cats.Logger
 import scala.util.matching.Regex
 
 object NotCute extends TextCommand with NoLog:
-  override def pattern: Regex = "not\\s+cute".r
+  override def pattern: Regex = ".*not\\s+cute.*".r
 
   override def matches(event: MessageEvent): Boolean = pattern.matches(stripAccents(event.content).toLowerCase)
 

@@ -17,7 +17,8 @@ import scala.jdk.CollectionConverters.*
 class Channel(channel: MessageChannel):
   lazy val discordID: DiscordID                                   = channel.getIdLong
   lazy val name: String                                           = channel.getName
-  def sendMessage(string: String): IO[Message]                    = channel.sendMessage(string).toIO.map(new Message(_))
+  def sendMessage(string: String): IO[Message]                    =
+    channel.sendMessage(string).toIO.map(new Message(_))
   def sendEmbed(embed: MessageEmbed): IO[Message]                 = channel.sendMessageEmbeds(embed).toIO.map(new Message(_))
   def sendFile(file: File): IO[Message]                           = channel.sendFiles(FileUpload.fromData(file)).toIO.map(new Message(_))
   def findMessageByID(discordID: DiscordID): OptionT[IO, Message] =

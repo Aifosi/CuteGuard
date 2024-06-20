@@ -10,9 +10,23 @@ import org.typelevel.log4cats.Logger
 import scala.util.matching.Regex
 
 object Subsmash extends TextCommand with NoLog:
-  override def pattern: Regex = "([^ ]{15,})+".r
+  override def pattern: Regex = ".*[^ ]{15,}.*".r
 
-  override def matches(event: MessageEvent): Boolean = pattern.matches(stripAccents(event.content).toLowerCase)
+  override def matches(event: MessageEvent): Boolean =
+    val filteredText =
+      stripAccents(event.contentStripped) // Remove diacritics
+        .toLowerCase                      // to lowercase
+        .replaceAll("http[^ ]+", "")      // remove links
+        .replaceAll(":.+?:", "")          // remove emoji
+        .replaceAll("`.+?`(:?``)?", "") // remove code blocks
+    val matches = pattern.matches(filteredText)
+    if matches then
+      println(s"sender: ${event.authorName}")
+      println(s"content: ${event.content}")
+      println(s"contentStripped: ${event.contentStripped}")
+      println(s"contentDisplay: ${event.contentDisplay}")
+      println(s"filteredText: $filteredText")
+    matches
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] = {
     val embed = Embed(

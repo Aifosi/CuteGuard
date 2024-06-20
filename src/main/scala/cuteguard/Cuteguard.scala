@@ -7,7 +7,7 @@ import cuteguard.model.Discord
 import cats.effect.{Deferred, IO, IOApp}
 import org.typelevel.log4cats.Logger
 
-//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications.commands&permissions=268438528
+//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications.commands&permissions=18432
 object Cuteguard extends IOApp.Simple:
 
   private def commanderBuilder(
