@@ -4,7 +4,7 @@ import cuteguard.model.*
 
 import cats.data.OptionT
 import cats.effect.IO
-import net.dv8tion.jda.api.entities.{Guild as JDAGuild, Member as JDAMember, User as JDAUser}
+import net.dv8tion.jda.api.entities.{Guild as JDAGuild, Member as JDAMember, MessageEmbed, User as JDAUser}
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 
 import java.io.File
@@ -27,6 +27,7 @@ abstract class Event(
   lazy val fromBot: Boolean         = author.isBot
   lazy val discord: Discord         = new Discord(jdaAuthor.getJDA)
 
-  def reply(string: String): IO[Message] = channel.sendMessage(string)
+  def reply(string: String): IO[Message]      = channel.sendMessage(string)
+  def reply(embed: MessageEmbed): IO[Message] = channel.sendEmbed(embed)
 
   def sendFile(file: File): IO[Message] = channel.sendFile(file)

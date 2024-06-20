@@ -1,10 +1,9 @@
 package cuteguard
 
 import cuteguard.commands.*
-import cuteguard.model.{CuteGuardUser, Discord, DiscordID}
+import cuteguard.model.{Discord, DiscordID}
 import cuteguard.syntax.action.*
 
-import cats.data.EitherT
 import cats.effect.IO
 import cats.syntax.foldable.*
 import org.typelevel.log4cats.Logger
@@ -15,7 +14,6 @@ case class Commander[Log <: DiscordLogger](
   logger: Log,
   commands: List[AnyCommand],
   onDiscordAcquired: Discord => IO[Unit],
-  unregisterHooks: Set[CuteGuardUser => EitherT[IO, String, Unit]] = Set.empty,
 )(using Logger[IO]):
   lazy val textCommands: List[TextCommand]                = commands.collect { case command: TextCommand =>
     command

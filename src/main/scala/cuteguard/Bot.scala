@@ -1,14 +1,11 @@
 package cuteguard
 
-import cuteguard.db.{CuteGuardUserRepository, DoobieLogHandler}
 import cuteguard.model.Discord
 
 import cats.effect.*
 import cats.effect.unsafe.IORuntime
-import doobie.{LogHandler, Transactor}
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.GatewayIntent
-import org.flywaydb.core.Flyway
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -31,47 +28,25 @@ object Bot:
       .map(new Discord(_))
       .evalTap(_ => Logger[IO].info("Loaded JDA"))
 
-  private def runMigrations(postgresConfig: PostgresConfiguration)(using Logger[IO]): IO[Unit] =
-    for
-      flyway     <- IO {
-                      Flyway.configure
-                        .dataSource(postgresConfig.url, postgresConfig.user, postgresConfig.password)
-                        .validateMigrationNaming(true)
-                        .baselineOnMigrate(true)
-                        .load
-                    }
-      migrations <- IO(flyway.migrate())
-      _          <- Logger[IO].debug(s"Ran ${migrations.migrationsExecuted} migrations.")
-    yield ()
-
-  private def loadConfigs: IO[(DiscordConfiguration, PostgresConfiguration)] =
-    for
-      discordConfig <- DiscordConfiguration.fromConfig()
-      postgres      <- PostgresConfiguration.fromConfig()
-    yield (discordConfig, postgres)
+  private def loadConfigs: IO[DiscordConfiguration] =
+    for discordConfig <- DiscordConfiguration.fromConfig()
+    yield discordConfig
 
   abstract class Builder[A]:
     def apply(
       discord: Deferred[IO, Discord],
-      cuteGuardUserRepository: CuteGuardUserRepository,
-    )(using Transactor[IO], LogHandler, Logger[IO]): A
+    )(using Logger[IO]): A
 
   def run[Log <: DiscordLogger](
     commanderBuilder: Builder[Commander[Log]],
   )(using IORuntime): IO[Unit] =
     for
-      given Logger[IO]                <- Slf4jLogger.create[IO]
-      (discordConfig, postgresConfig) <- loadConfigs
+      given Logger[IO] <- Slf4jLogger.create[IO]
+      discordConfig    <- loadConfigs
 
-      _ <- runMigrations(postgresConfig)
+      discordDeferred <- Deferred[IO, Discord]
 
-      given Transactor[IO] = postgresConfig.transactor
-      given LogHandler    <- DoobieLogHandler.default
-      discordDeferred     <- Deferred[IO, Discord]
-
-      cuteGuardUserRepository = new CuteGuardUserRepository(discordDeferred)
-
-      commander = commanderBuilder(discordDeferred, cuteGuardUserRepository)
+      commander = commanderBuilder(discordDeferred)
 
       given Log = commander.logger
 

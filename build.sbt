@@ -2,7 +2,7 @@ version := "1.0.0"
 
 name := "CuteGuard"
 
-val scala3Version = "3.4.0"
+val scala3Version = "3.4.2"
 scalaVersion := scala3Version
 
 // Used for scala fix
@@ -69,35 +69,27 @@ scalacOptions ++= Seq(
 )
 
 libraryDependencies ++= Seq(
+  apacheLang,
   catsEffect,
   circeCore,
   circeParser,
   catsRetry,
-  doobieCore,
-  doobiePostgres,
-  flyway,
   fs2,
-  fs2Kafka,
   jda,
   log4cats,
   logbackClassic,
-  postgres,
   pureconfig,
   pureconfigCE,
 )
 
+lazy val apacheLang     = "org.apache.commons"     % "commons-lang3"          % "3.14.0"
 lazy val catsEffect     = "org.typelevel"         %% "cats-effect"            % "3.5.0"
-lazy val circeCore      = "io.circe"              %% "circe-core"             % "0.14.5"
+lazy val circeCore      = "io.circe"              %% "circe-core"             % "0.14.7"
 lazy val circeParser    = "io.circe"              %% "circe-parser"           % circeCore.revision
-lazy val catsRetry      = "com.github.cb372"      %% "cats-retry"             % "3.1.0"
-lazy val doobieCore     = "org.tpolecat"          %% "doobie-core"            % "1.0.0-RC2"
-lazy val doobiePostgres = doobieCore.organization %% "doobie-postgres"        % doobieCore.revision
-lazy val flyway         = "org.flywaydb"           % "flyway-core"            % "9.16.0"
-lazy val fs2            = "co.fs2"                %% "fs2-core"               % "3.7.0"
-lazy val fs2Kafka       = "com.github.fd4s"       %% "fs2-kafka"              % "2.5.0"
+lazy val catsRetry      = "com.github.cb372"      %% "cats-retry"             % "3.1.3"
+lazy val fs2            = "co.fs2"                %% "fs2-core"               % "3.10.2"
 lazy val jda            = "net.dv8tion"            % "JDA"                    % "5.0.0-beta.20"
-lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"         % "2.5.0"
-lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"        % "1.4.7"
-lazy val postgres       = "org.postgresql"         % "postgresql"             % "42.5.4"
-lazy val pureconfig     = "com.github.pureconfig" %% "pureconfig-core"        % "0.17.2"
+lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"         % "2.6.0"
+lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"        % "1.5.6"
+lazy val pureconfig     = "com.github.pureconfig" %% "pureconfig-core"        % "0.17.7"
 lazy val pureconfigCE   = pureconfig.organization %% "pureconfig-cats-effect" % pureconfig.revision

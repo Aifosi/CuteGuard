@@ -10,9 +10,6 @@ import pureconfig.module.catseffect.syntax.*
 
 case class CuteguardConfiguration(
   logChannelID: Option[DiscordID],
-  pointsPerMessage: Int,
-  maxDailyPoints: Int,
-  ranks: List[(Int, DiscordID)],
 ) derives ConfigReader
 
 object CuteguardConfiguration:

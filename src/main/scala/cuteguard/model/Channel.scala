@@ -5,7 +5,7 @@ import cuteguard.syntax.io.*
 
 import cats.data.OptionT
 import cats.effect.IO
-import net.dv8tion.jda.api.entities.MessageHistory
+import net.dv8tion.jda.api.entities.{MessageEmbed, MessageHistory}
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.utils.FileUpload
 import org.typelevel.log4cats.Logger
@@ -18,6 +18,7 @@ class Channel(channel: MessageChannel):
   lazy val discordID: DiscordID                                   = channel.getIdLong
   lazy val name: String                                           = channel.getName
   def sendMessage(string: String): IO[Message]                    = channel.sendMessage(string).toIO.map(new Message(_))
+  def sendEmbed(embed: MessageEmbed): IO[Message]                 = channel.sendMessageEmbeds(embed).toIO.map(new Message(_))
   def sendFile(file: File): IO[Message]                           = channel.sendFiles(FileUpload.fromData(file)).toIO.map(new Message(_))
   def findMessageByID(discordID: DiscordID): OptionT[IO, Message] =
     for
