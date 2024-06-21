@@ -44,7 +44,7 @@ ThisBuild / githubWorkflowJobSetup ++= Seq(
     name = Some("Scalafmt"),
   ),
 )
-Universal / javaOptions ++= Seq(
+Universal / javaOptions            ++= Seq(
   "-Dconfig.file=/opt/docker/conf/application.conf",
 )
 
