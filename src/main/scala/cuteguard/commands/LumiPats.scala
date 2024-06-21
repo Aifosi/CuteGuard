@@ -1,8 +1,8 @@
 package cuteguard.commands
 import cuteguard.model.DiscordID
 import cuteguard.model.event.MessageEvent
+
 import cats.effect.IO
-import net.dv8tion.jda.api.entities.emoji.Emoji
 import org.typelevel.log4cats.Logger
 
 import scala.util.Random
