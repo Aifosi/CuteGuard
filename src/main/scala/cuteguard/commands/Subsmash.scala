@@ -10,16 +10,17 @@ import org.typelevel.log4cats.Logger
 import scala.util.matching.Regex
 
 object Subsmash extends TextCommand with NoLog:
-  override def pattern: Regex = "[^ \n]{15,}".r
+  override def pattern: Regex = "[^ \n]{17,}".r
 
   override def matches(event: MessageEvent): Boolean =
     val filteredText =
-      stripAccents(event.content)    // Remove diacritics
-        .toLowerCase                 // to lowercase
-        .replaceAll("http[^ ]+", "") // remove links
-        .replaceAll("<.+?>", "")     // remove emoji and links
-        .replaceAll(":.+?:", "")     // remove more emoji
+      stripAccents(event.content)       // Remove diacritics
+        .toLowerCase                    // to lowercase
+        .replaceAll("http[^ ]+", "")    // remove links
+        .replaceAll("<.+?>", "")        // remove emoji and links
+        .replaceAll(":.+?:", "")        // remove more emoji
         .replaceAll("`.+?`(:?``)?", "") // remove code blocks
+        .replaceAll("\\w+([/|\\\\]\\w+)+", "") // remove word alternations
     val matches = pattern.findFirstIn(filteredText).nonEmpty
     if matches then
       println(s"sender: ${event.authorName}")
