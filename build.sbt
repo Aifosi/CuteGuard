@@ -3,26 +3,26 @@ version := "1.0.0"
 name := "CuteGuard"
 
 val scala3Version = "3.4.2"
-scalaVersion := scala3Version
+ThisBuild / scalaVersion := scala3Version
 
 // Used for scala fix
-semanticdbEnabled := true
-semanticdbVersion := scalafixSemanticdb.revision
+ThisBuild / semanticdbEnabled := true
+ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
-scalafixOnCompile := true
-scalafmtOnCompile := true
+ThisBuild / scalafixOnCompile := true
+ThisBuild / scalafmtOnCompile := true
 
 enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin)
 
-publish / skip                      := true
-githubWorkflowJavaVersions          := Seq(JavaSpec.temurin("17"))
-crossScalaVersions                  := List(scala3Version)
-githubWorkflowIncludeClean          := false
-githubWorkflowTargetBranches        := Seq("master")
-githubWorkflowTargetPaths           := Paths.Include(List("**version.sbt"))
-githubWorkflowPublishTargetBranches := Seq(RefPredicate.Equals(Ref.Branch("master")))
+ThisBuild / publish / skip                      := true
+ThisBuild / githubWorkflowJavaVersions          := Seq(JavaSpec.temurin("17"))
+ThisBuild / crossScalaVersions                  := List(scala3Version)
+ThisBuild / githubWorkflowIncludeClean          := false
+ThisBuild / githubWorkflowTargetBranches        := Seq("master")
+ThisBuild / githubWorkflowTargetPaths           := Paths.Include(List("**version.sbt"))
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(RefPredicate.Equals(Ref.Branch("master")))
 
-githubWorkflowPublishPreamble := Seq(
+ThisBuild / githubWorkflowPublishPreamble := Seq(
   WorkflowStep.Use(
     name = Some("Login to DockerHub"),
     ref = UseRef.Public("docker", "login-action", "v2"),
@@ -33,14 +33,14 @@ githubWorkflowPublishPreamble := Seq(
   ),
 )
 
-githubWorkflowPublish := Seq(
+ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Sbt(
     List("Docker / publish"),
     name = Some("Publish to docker hub"),
   ),
 )
 
-githubWorkflowJobSetup ++= Seq(
+ThisBuild / githubWorkflowJobSetup ++= Seq(
   WorkflowStep.Sbt(
     List("+scalafmtCheckAll", "scalafmtSbtCheck"),
     name = Some("Scalafmt"),
