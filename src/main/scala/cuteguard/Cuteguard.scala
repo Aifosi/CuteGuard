@@ -19,6 +19,7 @@ object Cuteguard extends IOApp.Simple:
       val commands: List[AnyCommand] = List(
         NotCute,
         Subsmash,
+        LumiPats,
       )
 
       Commander(discordLogger, commands, discordLogger.complete(_, config))

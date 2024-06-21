@@ -19,8 +19,8 @@ object NotCute extends TextCommand with NoLog:
   val i                       = "[i1\uD83C\uDDEE]"
   val e                       = "[e3\uD83C\uDDEA]"
   override def pattern: Regex =
-    s"$n[^a-z]*$o[^a-z]*$t\\s*[^a-z]*$a?\\s*$c[^a-z]*$u[^a-z]*$t[^a-z]*$i?$e?".r
-  def uncutePattern: Regex    = s"$u[^a-z]$n[^a-z]$c[^a-z]*$u[^a-z]*$t[^a-z]*$i?$e?".r
+    s"$n[^a-z]*$o[^a-z]*$t\\s*[^a-z]*$a?\\s*$c[^a-z]*$u[^a-z]*$t[^a-z]*$i?[^a-z]*$e?".r
+  def uncutePattern: Regex    = s"$u[^a-z]*$n[^a-z]*$c[^a-z]*$u[^a-z]*$t[^a-z]*$i?[^a-z]*$e?".r
 
   override def matches(event: MessageEvent): Boolean =
     val stripped = stripAccents(event.content).toLowerCase
