@@ -1,5 +1,3 @@
-version := "1.0.0"
-
 name := "CuteGuard"
 
 val scala3Version = "3.4.2"
@@ -45,6 +43,9 @@ ThisBuild / githubWorkflowJobSetup ++= Seq(
     List("+scalafmtCheckAll", "scalafmtSbtCheck"),
     name = Some("Scalafmt"),
   ),
+)
+Universal / javaOptions ++= Seq(
+  "-Dconfig.file=/opt/docker/conf/application.conf",
 )
 
 Docker / dockerRepository := Some("aifosi")

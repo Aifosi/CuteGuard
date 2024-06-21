@@ -1,11 +1,7 @@
 services:
   bookofaifosi:
-    build:
-      context: git@github.com:Aifosi/CuteGuard.git
-    image: aifosi/cuteguard
+    image: aifosi/cuteguard:latest
     user: root
     restart: "unless-stopped"
-    environment:
-      DB_HOSTNAME: "db"
     volumes:
       - "./src/main/resources/application.conf:/opt/docker/conf/application.conf"
