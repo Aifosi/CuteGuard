@@ -10,6 +10,7 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
+//TODO do not retrigger too fast for the same user, maybe some 5 sec cooldown?
 case class SubsmashTrigram(grams: Grams) extends TextCommand with NoLog:
   override def pattern: Regex = ".*".r
 
