@@ -8,6 +8,7 @@ import cats.data.EitherT
 import cats.effect.IO
 import cats.syntax.either.*
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.requests.RestAction
 
@@ -31,6 +32,11 @@ class Discord(val jda: JDA):
   def unsafeRoleByID(id: DiscordID): IO[Role] = roleByID(id).rethrowT
 
   def guilds: List[Guild] = jda.getGuilds.asScala.toList.map(new Guild(_))
+
+  def activity(activity: Activity): IO[Unit] = IO(jda.getPresence.setActivity(activity))
+  def activity(string: String): IO[Unit]     = IO(jda.getPresence.setActivity(Activity.customStatus(string)))
+
+  def clearActivity: IO[Unit] = IO(jda.getPresence.setActivity(null))
 
 object Discord:
   final private[model] class PartiallyAppliedGetter[ID](private val dummy: Boolean = true) extends AnyVal:
