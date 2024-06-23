@@ -35,11 +35,13 @@ case class SubsmashTrigram(grams: Grams, discord: Deferred[IO, Discord]) extends
     val filteredText =
       stripAccents(event.content)                  // Remove diacritics
         .toLowerCase                               // to lowercase
-        .replaceAll("https?://[^ ]+", "")          // remove links
+        .replaceAll("https?://[^ ]+\\.[^ ]+", "")  // remove links
         .replaceAll("<.+?>", "")                   // remove emoji and links
         .replaceAll(":.+?:", "")                   // remove more emoji
         .replaceAll("`.+?`(:?``)?", "")            // remove code blocks
         .replaceAll("(\\w+)[^a-z](\\w+)", "$1 $2") // remove word alternations
+        .replaceAll("(\\w)\\1+", "$1")             // remove single character repetitions
+        .replaceAll("(\\w\\w)\\1+", "$1")          // remove doube character repetitions
         .replaceAll("[^a-z \n]", "")
 
     val minLength = 6
