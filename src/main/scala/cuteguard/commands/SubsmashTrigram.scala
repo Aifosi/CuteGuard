@@ -46,7 +46,7 @@ case class SubsmashTrigram(grams: Grams) extends TextCommand with NoLog:
         println(s"filteredText: $filteredText")
         println(s"word: $word")
         println(s"quadgramsWordFitness: $quadgramsWordFitness")
-        false
+        true
       else false
       /*val trigramWordFitness = filteredText.minWordFitness(minLength, 3, grams.trigrams)
       val trigramFitness = filteredText.replaceAll(" ", "").fitness(3, grams.trigrams)
