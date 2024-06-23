@@ -35,6 +35,7 @@ object Bot:
   abstract class Builder[A]:
     def apply(
       discord: Deferred[IO, Discord],
+      grams: Grams,
     )(using Logger[IO]): A
 
   def run[Log <: DiscordLogger](
@@ -46,7 +47,9 @@ object Bot:
 
       discordDeferred <- Deferred[IO, Discord]
 
-      commander = commanderBuilder(discordDeferred)
+      grams <- Grams.apply
+
+      commander = commanderBuilder(discordDeferred, grams)
 
       given Log = commander.logger
 

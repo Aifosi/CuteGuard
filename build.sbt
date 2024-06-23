@@ -76,6 +76,7 @@ libraryDependencies ++= Seq(
   circeParser,
   catsRetry,
   fs2,
+  fs2IO,
   jda,
   log4cats,
   logbackClassic,
@@ -89,6 +90,7 @@ lazy val circeCore      = "io.circe"              %% "circe-core"             % 
 lazy val circeParser    = "io.circe"              %% "circe-parser"           % circeCore.revision
 lazy val catsRetry      = "com.github.cb372"      %% "cats-retry"             % "3.1.3"
 lazy val fs2            = "co.fs2"                %% "fs2-core"               % "3.10.2"
+lazy val fs2IO          = "co.fs2"                %% "fs2-io"                 % fs2.revision
 lazy val jda            = "net.dv8tion"            % "JDA"                    % "5.0.0-beta.20"
 lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"         % "2.6.0"
 lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"        % "1.5.6"
