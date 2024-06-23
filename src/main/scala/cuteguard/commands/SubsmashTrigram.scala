@@ -1,17 +1,20 @@
 package cuteguard.commands
 
 import cuteguard.Grams
+import cuteguard.model.Discord
 import cuteguard.model.Embed
 import cuteguard.model.event.MessageEvent
 
+import cats.effect.*
 import cats.effect.IO
+import net.dv8tion.jda.api.entities.Activity
 import org.apache.commons.lang3.StringUtils.stripAccents
 import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
 //TODO do not retrigger too fast for the same user, maybe some 5 sec cooldown?
-case class SubsmashTrigram(grams: Grams) extends TextCommand with NoLog:
+case class SubsmashTrigram(grams: Grams, discord: Deferred[IO, Discord]) extends TextCommand with NoLog:
   override def pattern: Regex = ".*".r
 
   extension (string: String)
@@ -58,13 +61,16 @@ case class SubsmashTrigram(grams: Grams) extends TextCommand with NoLog:
       println(s"quadgramsWordFitness: $quadgramsWordFitness")
       println(s"quadgramsFitness: $quadgramsFitness")*/
 
-  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] = {
+  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
     val embed = Embed(
       s"${event.authorName}, use your words cutie",
       "https://cdn.discordapp.com/attachments/988232177265291324/1253319448954277949/nobottom.webp",
       "created by a sneaky totally not cute kitty",
     )
-    event.reply(embed).as(true)
-  }
+    for
+      discord <- discord.get
+      _       <- IO(discord.jda.getPresence.setActivity(Activity.customStatus(s"Tormenting ${event.authorName}"))).attempt
+      _       <- event.reply(embed)
+    yield true
 
   override val description: String = "Responds when a user says they are not cute"

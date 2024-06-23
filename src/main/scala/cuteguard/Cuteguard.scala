@@ -22,7 +22,7 @@ object Cuteguard extends IOApp.Simple:
         NotCute,
         // Subsmash,
         // LumiPats,
-        SubsmashTrigram(grams),
+        SubsmashTrigram(grams, discord),
       )
 
       Commander(discordLogger, commands, discordLogger.complete(_, config))
