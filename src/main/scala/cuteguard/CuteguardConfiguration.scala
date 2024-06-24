@@ -8,8 +8,18 @@ import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.generic.derivation.default.derived
 import pureconfig.module.catseffect.syntax.*
 
+import scala.concurrent.duration.FiniteDuration
+
+case class SubsmashConfiguration(
+  minLength: Int,
+  threshold: Float,
+  cooldown: FiniteDuration,
+  activityReset: FiniteDuration,
+) derives ConfigReader
+
 case class CuteguardConfiguration(
   logChannelID: Option[DiscordID],
+  subsmash: SubsmashConfiguration,
 ) derives ConfigReader
 
 object CuteguardConfiguration:

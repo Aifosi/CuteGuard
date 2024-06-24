@@ -1,6 +1,7 @@
 package cuteguard.commands
 
 import cuteguard.Grams
+import cuteguard.SubsmashConfiguration
 import cuteguard.model.Discord
 import cuteguard.model.Embed
 import cuteguard.model.event.MessageEvent
@@ -11,15 +12,14 @@ import org.apache.commons.lang3.StringUtils.stripAccents
 import org.typelevel.log4cats.Logger
 
 import java.time.Instant
-import java.time.temporal.ChronoUnit
-import scala.concurrent.duration.*
 import scala.util.matching.Regex
 
-case class Subsmash(grams: Grams, discord: Deferred[IO, Discord]) extends TextCommand with NoLog:
+case class Subsmash(grams: Grams, discord: Deferred[IO, Discord], config: SubsmashConfiguration)
+    extends TextCommand with NoLog:
   private val lastActivationRef: Ref[IO, Option[(FiberIO[Unit], Instant)]] = Ref.unsafe(None)
 
   private val reset         = for
-    _       <- IO.sleep(30.seconds)
+    _       <- IO.sleep(config.activityReset)
     discord <- discord.get
     _       <- discord.clearActivity.attempt
     _       <- lastActivationRef.set(None)
@@ -56,26 +56,17 @@ case class Subsmash(grams: Grams, discord: Deferred[IO, Discord]) extends TextCo
         .replaceAll("(\\w+)[^a-z](\\w+)", "$1 $2") // remove word alternations
         .replaceAll("(\\w)\\1+", "$1")             // remove single character repetitions
         .replaceAll("(\\w\\w)\\1+", "$1")          // remove doube character repetitions
-        .replaceAll("[^a-z \n]", "")
+        .replaceAll("[^a-z \n]", "") // Remove all symbols
 
-    val minLength = 6
-    if filteredText.length < minLength then false
+    if filteredText.length < config.minLength then false
     else
-      val (word, quadgramsWordFitness) = filteredText.minWordFitness(minLength, 4, grams.quadgrams)
+      val (word, quadgramsWordFitness) = filteredText.minWordFitness(config.minLength, 4, grams.quadgrams)
       if quadgramsWordFitness > 3.5 then
         println(s"filteredText: $filteredText")
         println(s"word: $word")
         println(s"quadgramsWordFitness: $quadgramsWordFitness")
         true
       else false
-      /*val trigramWordFitness = filteredText.minWordFitness(minLength, 3, grams.trigrams)
-      val trigramFitness = filteredText.replaceAll(" ", "").fitness(3, grams.trigrams)
-      val quadgramsWordFitness = filteredText.minWordFitness(minLength, 4, grams.quadgrams)
-      val quadgramsFitness = filteredText.replaceAll(" ", "").fitness(4, grams.quadgrams)
-      println(s"trigramWordFitness: $trigramWordFitness")
-      println(s"trigramFitness: $trigramFitness")
-      println(s"quadgramsWordFitness: $quadgramsWordFitness")
-      println(s"quadgramsFitness: $quadgramsFitness")*/
 
   private def activate(event: MessageEvent) = for
     discord <- discord.get
@@ -93,8 +84,9 @@ case class Subsmash(grams: Grams, discord: Deferred[IO, Discord]) extends TextCo
     for
       lastActivation <- lastActivationRef.get
       _              <- lastActivation.fold(activate(event)) {
-                          case (_, insant) if ChronoUnit.SECONDS.between(insant, Instant.now) <= 5 => IO.unit // cooldown
-                          case (fiber, _)                                                          =>
+                          case (_, insant) if insant.plusSeconds(config.cooldown.toSeconds).isAfter(Instant.now) =>
+                            IO.unit // cooldown
+                          case (fiber, _)                                                                        =>
                             fiber.cancel *> activate(event)
                         }
     yield true
