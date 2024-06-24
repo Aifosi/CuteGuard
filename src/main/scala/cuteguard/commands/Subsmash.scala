@@ -61,7 +61,7 @@ case class Subsmash(grams: Grams, discord: Deferred[IO, Discord], config: Subsma
     if filteredText.length < config.minLength then false
     else
       val (word, quadgramsWordFitness) = filteredText.minWordFitness(config.minLength, 4, grams.quadgrams)
-      if quadgramsWordFitness > 3.5 then
+      if quadgramsWordFitness > config.threshold then
         println(s"filteredText: $filteredText")
         println(s"word: $word")
         println(s"quadgramsWordFitness: $quadgramsWordFitness")
