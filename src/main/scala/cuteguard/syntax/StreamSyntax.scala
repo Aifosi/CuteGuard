@@ -1,7 +1,6 @@
 package cuteguard.syntax
 
 import cats.{Applicative, Functor}
-import cats.effect.IO
 import cats.syntax.functor.*
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -22,7 +21,6 @@ trait StreamSyntax:
       Applicative[[O] =>> Stream[F, O]].whenA(cond)(action)
 
     // def println[A](a: A)(using S: Show[A] = Show.fromToString[A]): Stream[IO, Unit] = Stream.eval(IO.println(a))
-    def unit: Stream[IO, Unit] = Stream.emit(())
 
   extension [F[_], O](stream: Stream[F, O])
     def handleErrorAndContinue[F2[x] >: F[x]](h: Throwable => Stream[F2, O]): Stream[F2, O] =

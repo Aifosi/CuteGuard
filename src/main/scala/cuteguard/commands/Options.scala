@@ -13,4 +13,4 @@ trait Options:
   this: SlashCommand =>
   val options: List[PatternOption]
 
-  override lazy val pattern: SlashPattern = slashPattern.applyOptions(options)
+  override val pattern: SlashPattern = slashPattern.applyOptions(options)

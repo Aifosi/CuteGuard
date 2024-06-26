@@ -2,7 +2,6 @@ package cuteguard
 
 import cuteguard.commands.{Command, NoLog}
 import cuteguard.model.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
-import cuteguard.model.event.MessageEvent.*
 import cuteguard.model.event.MessageEvent.given
 import cuteguard.model.event.ReactionEvent.given
 import cuteguard.model.event.SlashCommandEvent.given
