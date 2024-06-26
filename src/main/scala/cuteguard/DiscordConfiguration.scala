@@ -1,15 +1,14 @@
 package cuteguard
 
-import cats.effect.IO
-import com.typesafe.config.{Config, ConfigFactory}
-import pureconfig.{ConfigReader, ConfigSource}
+import cuteguard.model.DiscordID
+
+import pureconfig.ConfigReader
 import pureconfig.generic.derivation.default.derived
-import pureconfig.module.catseffect.syntax.*
 
 case class DiscordConfiguration(
   token: String,
+  logChannelID: Option[DiscordID],
 ) derives ConfigReader
 
 object DiscordConfiguration:
-  def fromConfig(config: Config = ConfigFactory.load()): IO[DiscordConfiguration] =
-    ConfigSource.fromConfig(config).at("discord").loadF()
+  given ConfigReader[(Int, DiscordID)] = ConfigReader.derived[(Int, DiscordID)]

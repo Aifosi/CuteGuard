@@ -1,6 +1,6 @@
 package cuteguard
 
-import cuteguard.model.{Channel, Discord, DiscordID, Message}
+import cuteguard.model.{Channel, Discord, DiscordID}
 import cuteguard.syntax.io.*
 import cuteguard.syntax.stream.*
 
@@ -13,50 +13,45 @@ import scala.concurrent.duration.*
 
 open class DiscordLogger protected (
   notificationsRef: Ref[IO, Set[String]],
-  logChannelDeferred: Deferred[IO, Option[Channel]],
+  getLogChannel: () => OptionT[IO, Channel],
 ):
-  protected def log(channel: Deferred[IO, Option[Channel]], message: => String)(using
-    Logger[IO],
-  ): OptionT[IO, Message] =
-    OptionT(channel.get).semiflatMap(_.sendMessage(message))
+  protected def logStream(channel: Channel, message: => String): Stream[IO, Unit] =
+    Stream.eval(channel.sendMessage(message)).as(())
 
-  protected def logStream(channel: Deferred[IO, Option[Channel]], message: => String)(using
-    Logger[IO],
-  ): Stream[IO, Unit] =
-    Stream.eval(log(channel, message).value).as(())
+  def logToChannel(message: => String): IO[Unit] =
+    getLogChannel().semiflatMap(_.sendMessage(message)).value.void
 
-  def logToChannel(message: => String)(using Logger[IO]): IO[Unit] = log(logChannelDeferred, message).value.void
+  def logToChannelStream(message: => String): Stream[IO, Unit] =
+    Stream.evals(getLogChannel().value).flatMap(logStream(_, message))
 
-  def logToChannelStream(message: => String)(using Logger[IO]): Stream[IO, Unit] =
-    logStream(logChannelDeferred, message)
-
-  def logWithoutSpam(message: => String)(using Logger[IO]): Stream[IO, Unit] =
+  def logWithoutSpam(message: => String): Stream[IO, Unit] =
     for
       notifications <- notificationsRef.get.streamed
       _             <- Stream.filter(!notifications.contains(message))
       _             <- notificationsRef.update(_ + message).streamed
       _             <- (IO.sleep(1.hour) *> notificationsRef.update(_ - message)).start.streamed
-      n             <- logToChannelStream(message)
-    yield n
-
-  def complete(discord: Discord, config: CuteguardConfiguration)(using Logger[IO]): IO[Unit] =
-    for
-      logChannel <- DiscordLogger.getChannel(discord, "log", config.logChannelID)
-      _          <- logChannelDeferred.complete(logChannel)
+      _             <- logToChannelStream(message)
     yield ()
 
 object DiscordLogger:
-  def getChannel(discord: Discord, chanelName: String, id: Option[DiscordID])(using Logger[IO]): IO[Option[Channel]] =
-    (for
+  def getChannel(discord: Discord, chanelName: String, id: Option[DiscordID])(using Logger[IO]): OptionT[IO, Channel] =
+    for
       id      <- OptionT.fromOption(id).flatTapNone(Logger[IO].debug(s"$chanelName channel not configured."))
       channel <- discord
                    .channelByID(id)
                    .toOption
                    .flatTapNone(Logger[IO].debug(s"No channel with id $id found to assign for $chanelName channel."))
-    yield channel).value
+    yield channel
 
-  def create: IO[DiscordLogger] =
-    for
-      notificationsRef   <- Ref.of[IO, Set[String]](Set.empty)
-      logChannelDeferred <- Deferred[IO, Option[Channel]]
-    yield new DiscordLogger(notificationsRef, logChannelDeferred)
+  def getLogChannel(
+    discordDeferred: Deferred[IO, Discord],
+    config: DiscordConfiguration,
+  )(using Logger[IO]): OptionT[IO, Channel] = for
+    discord <- OptionT.liftF(discordDeferred.get)
+    channel <- getChannel(discord, "log", config.logChannelID)
+    _       <- OptionT.liftF(Logger[IO].info(s"Log channel is ${channel.name}"))
+  yield channel
+
+  def apply(discordDeferred: Deferred[IO, Discord], config: DiscordConfiguration)(using Logger[IO]): IO[DiscordLogger] =
+    for notificationsRef <- Ref.of[IO, Set[String]](Set.empty)
+    yield new DiscordLogger(notificationsRef, () => getLogChannel(discordDeferred, config))

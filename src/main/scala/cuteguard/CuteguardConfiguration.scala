@@ -1,7 +1,5 @@
 package cuteguard
 
-import cuteguard.model.DiscordID
-
 import cats.effect.IO
 import com.typesafe.config.{Config, ConfigFactory}
 import pureconfig.{ConfigReader, ConfigSource}
@@ -18,12 +16,10 @@ case class SubsmashConfiguration(
 ) derives ConfigReader
 
 case class CuteguardConfiguration(
-  logChannelID: Option[DiscordID],
   subsmash: SubsmashConfiguration,
+  discord: DiscordConfiguration,
 ) derives ConfigReader
 
 object CuteguardConfiguration:
-
-  given ConfigReader[(Int, DiscordID)]                                              = ConfigReader.derived[(Int, DiscordID)]
   def fromConfig(config: Config = ConfigFactory.load()): IO[CuteguardConfiguration] =
-    ConfigSource.fromConfig(config).at("cuteguard").loadF()
+    ConfigSource.fromConfig(config).loadF()

@@ -15,7 +15,7 @@ import java.net.URL
 open class User(private[model] val user: JDAUser):
   lazy val discordID: DiscordID = user.getIdLong
   lazy val mention: String      = user.getAsMention // s"<@!$discordID>"
-  lazy val name: String         = user.getName
+  lazy val accountName: String  = user.getName
   lazy val avatarURL: URL       = new URL(user.getAvatarUrl)
   lazy val isBot: Boolean       = user.isBot
 
@@ -35,11 +35,11 @@ open class User(private[model] val user: JDAUser):
       member           <- OptionT(unsafeMember(guild).logErrorOption)
     yield member
 
-  def getNameIn(guild: Guild): OptionT[IO, String] = member(guild).map(_.effectiveName)
+  def getNameIn(guild: Guild): OptionT[IO, String] = member(guild).map(_.guildName)
 
   def hasRole(guild: Guild, role: Role): IO[Boolean] = member(guild).exists(_.hasRole(role))
 
-  override lazy val toString: String = s"$name($discordID)"
+  override lazy val toString: String = s"$accountName($discordID)"
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[User]
 

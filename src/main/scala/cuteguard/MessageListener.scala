@@ -53,7 +53,7 @@ class MessageListener(
   private def log(event: Event, message: String): IO[Unit] =
     for
       guild  <- event.guild
-      mention = if guild.isOwner(event.author) then event.author.name else event.author.mention
+      mention = if guild.isOwner(event.author) then event.author.accountName else event.author.mention
       _      <- discordLogger.logToChannel(mention + message)
       _      <- Logger[IO].info(event.author.toString + message)
     yield ()
@@ -63,12 +63,12 @@ class MessageListener(
       lazy val subgroups = command.pattern.findFirstMatchIn(event.content).get.subgroups.mkString(" ")
       if command.pattern != Command.all then log(event, s" issued text command $command $subgroups".stripTrailing)
       else IO.unit
-    }.unsafeRunSync()
+    }.unsafeRunAndForget()
 
   override def onMessageReactionAdd(event: MessageReactionAddEvent): Unit =
     runCommandList(event, commander.reactionCommands) { (event, command) =>
       log(event, s" issued reaction command $command".stripTrailing)
-    }.unsafeRunSync()
+    }.unsafeRunAndForget()
 
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit =
     runCommandList(event, commander.slashCommands) { (event, command) =>
@@ -83,7 +83,7 @@ class MessageListener(
         event,
         s" issued slash command $command${if options.nonEmpty then s", options: $options" else ""}".stripTrailing,
       )
-    }.unsafeRunSync()
+    }.unsafeRunAndForget()
 
   override def onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent): Unit =
     commander.autoCompletableCommands
@@ -96,7 +96,7 @@ class MessageListener(
         case (io, _)                                             => io
       }
       .void
-      .unsafeRunSync()
+      .unsafeRunAndForget()
 
 /* override def onGuildMemberRemove(event: GuildMemberRemoveEvent): Unit =
     val io = for
