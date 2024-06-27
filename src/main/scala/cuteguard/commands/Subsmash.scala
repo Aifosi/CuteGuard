@@ -47,7 +47,7 @@ case class Subsmash(fitness: Fitness, discord: Deferred[IO, Discord], config: Su
         else IO.pure(false)
     yield matches
 
-  private def activate(event: MessageEvent) = for
+  private def sendReply(event: MessageEvent) = for
     discord <- discord.get
     _       <- discord.activity(s"Tormenting ${event.authorName}").attempt
     _       <- resetActivity
@@ -61,11 +61,11 @@ case class Subsmash(fitness: Fitness, discord: Deferred[IO, Discord], config: Su
 
   private def run(event: MessageEvent): IO[Unit] = for
     lastActivation <- lastActivationRef.get
-    _              <- lastActivation.fold(activate(event)) {
+    _              <- lastActivation.fold(sendReply(event)) {
                         case (_, insant) if insant.plusSeconds(config.cooldown.toSeconds).isAfter(Instant.now) =>
                           IO.unit // cooldown
                         case (fiber, _)                                                                        =>
-                          fiber.cancel *> activate(event)
+                          fiber.cancel *> sendReply(event)
                       }
   yield ()
 
@@ -73,7 +73,7 @@ case class Subsmash(fitness: Fitness, discord: Deferred[IO, Discord], config: Su
     for
       guild      <- event.guild
       members    <- guild.members.compile.toList
-      memberNames = members.flatMap(_.guildName.sanitise.split(" ")).toSet
+      memberNames = members.flatMap(_.guildName.sanitise.split(" ")).toSet.filter(_.length >= 4)
       matches    <- matches(event.content.sanitise, memberNames)
       _          <- IO.whenA(matches)(run(event))
     yield true

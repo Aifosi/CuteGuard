@@ -24,13 +24,12 @@ class Fitness(quadgrams: Deferred[IO, Map[String, Double]]):
     def minWordFitness(minLength: Int): IO[(String, Double)] = quadgrams.get.map(minWordFitness(minLength, 4, _))
 
     def sanitise: String =
-      stripAccents(string)                         // Remove diacritics
-        .toLowerCase                               // to lowercase
-        .replaceAll("https?://[^ ]+\\.[^ ]+", "")  // remove links
-        .replaceAll("<.+?>", "")                   // remove emoji and links
-        .replaceAll(":.+?:", "")                   // remove more emoji
-        .replaceAll("`.+?`(:?``)?", "")            // remove code blocks
-        .replaceAll("(\\w+)[^a-z](\\w+)", "$1 $2") // remove word alternations
-        .replaceAll("(\\w)\\1+", "$1")             // remove single character repetitions
-        .replaceAll("(\\w\\w)\\1+", "$1")          // remove doube character repetitions
+      stripAccents(string)                          // Remove diacritics
+        .toLowerCase                                // to lowercase
+        .replaceAll("https?://[^ ]+\\.[^ ]+", "")   // remove links
+        .replaceAll("<a?:\\w+:\\d+>", "")           // remove emoji and links
+        .replaceAll("`(:?``)?[^`]+`(:?``)?", "")    // remove code blocks
+        .replaceAll("(\\w+)[^\\w ](\\w+)", "$1 $2") // remove word alternations
+        .replaceAll("(\\w)\\1+", "$1")              // remove single character repetitions
+        .replaceAll("(\\w\\w)\\1+", "$1")           // remove doube character repetitions
         .replaceAll("[^a-z \n]", "") // Remove all symbols
