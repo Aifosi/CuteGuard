@@ -25,6 +25,7 @@ object Cuteguard extends IOApp.Simple:
         // Subsmash,
         // LumiPats,
         Subsmash(fitness, discord, config.subsmash),
+        Pleading,
       )
 
       Commander(discordLogger, commands)

@@ -28,7 +28,7 @@ object NotCute extends TextCommand with NoLog:
     val uncute   = uncutePattern.findFirstIn(stripped).nonEmpty
     notCute || uncute
 
-  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] = {
+  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
     val embed = Embed(
       s"Lies - you're cute ${event.authorName}",
       "According to server rule 1, you are cute.\nJust accept it cutie! \uD83D\uDC9C",
@@ -36,6 +36,5 @@ object NotCute extends TextCommand with NoLog:
       "created by a sneaky totally not cute kitty",
     )
     event.reply(embed).as(true)
-  }
 
   override val description: String = "Responds when a user says they are not cute"
