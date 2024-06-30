@@ -9,6 +9,8 @@ import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.GatewayIntent
 import org.typelevel.log4cats.Logger
 
+import scala.concurrent.duration.FiniteDuration
+
 object Bot:
   private def acquireDiscordClient(
     discordDeferred: Deferred[IO, Discord],
@@ -50,17 +52,21 @@ object Bot:
     def apply(
       discord: Deferred[IO, Discord],
       quadgrams: Deferred[IO, Map[String, Double]],
+      cooldown: Cooldown,
     )(using Logger[IO]): A
 
   def run[Log <: DiscordLogger](
     discordConfig: DiscordConfiguration,
     discordDeferred: Deferred[IO, Discord],
+    cooldown: FiniteDuration,
     commanderBuilder: Builder[Commander[Log]],
   )(using IORuntime, Logger[IO]): IO[Unit] =
     for
       gramsDeferred <- Deferred[IO, Map[String, Double]]
 
-      commander = commanderBuilder(discordDeferred, gramsDeferred)
+      cooldown <- Cooldown(cooldown)
+
+      commander = commanderBuilder(discordDeferred, gramsDeferred, cooldown)
 
       given Log = commander.logger
 

@@ -18,14 +18,15 @@ object Cuteguard extends IOApp.Simple:
     override def apply(
       discord: Deferred[IO, Discord],
       quadgrams: Deferred[IO, Map[String, Double]],
+      cooldown: Cooldown,
     )(using Logger[IO]): Commander[DiscordLogger] =
       val fitness                    = Fitness(quadgrams)
       val commands: List[AnyCommand] = List(
-        NotCute,
+        NotCute(cooldown),
         // Subsmash,
         // LumiPats,
-        Subsmash(fitness, discord, config.subsmash),
-        Pleading,
+        Subsmash(cooldown, fitness, discord, config.subsmash),
+        Pleading(cooldown),
       )
 
       Commander(discordLogger, commands)
@@ -36,5 +37,5 @@ object Cuteguard extends IOApp.Simple:
       config              <- CuteguardConfiguration.fromConfig()
       discordDeferred     <- Deferred[IO, Discord]
       given DiscordLogger <- DiscordLogger(discordDeferred, config.discord)
-      _                   <- Bot.run(config.discord, discordDeferred, commanderBuilder(config))(using runtime)
+      _                   <- Bot.run(config.discord, discordDeferred, config.cooldown, commanderBuilder(config))(using runtime)
     yield ()

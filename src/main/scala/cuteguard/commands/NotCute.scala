@@ -1,5 +1,6 @@
 package cuteguard.commands
 
+import cuteguard.Cooldown
 import cuteguard.model.Embed
 import cuteguard.model.event.MessageEvent
 
@@ -9,7 +10,7 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
-object NotCute extends TextCommand with NoLog:
+case class NotCute(cooldown: Cooldown) extends TextCommand with NoChannelLog:
   val n                       = "(n|🇳)"
   val o                       = "[o0\uD83C\uDDF4]"
   val t                       = "[t7\uD83C\uDDF9]"
@@ -29,12 +30,12 @@ object NotCute extends TextCommand with NoLog:
     notCute || uncute
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
-    val embed = Embed(
+    lazy val embed = Embed(
       s"Lies - you're cute ${event.authorName}",
       "According to server rule 1, you are cute.\nJust accept it cutie! \uD83D\uDC9C",
       "https://media.tenor.com/iESegr2Kb6MAAAAC/narpy-cute.gif",
       "created by a sneaky totally not cute kitty",
     )
-    event.reply(embed).as(true)
+    cooldown.interact(event.author)(event.reply(embed).void)
 
   override val description: String = "Responds when a user says they are not cute"

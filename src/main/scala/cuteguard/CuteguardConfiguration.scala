@@ -11,13 +11,13 @@ import scala.concurrent.duration.FiniteDuration
 case class SubsmashConfiguration(
   minLength: Int,
   threshold: Float,
-  cooldown: FiniteDuration,
   activityReset: FiniteDuration,
 ) derives ConfigReader
 
 case class CuteguardConfiguration(
-  subsmash: SubsmashConfiguration,
   discord: DiscordConfiguration,
+  subsmash: SubsmashConfiguration,
+  cooldown: FiniteDuration,
 ) derives ConfigReader
 
 object CuteguardConfiguration:

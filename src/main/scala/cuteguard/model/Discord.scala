@@ -35,6 +35,7 @@ class Discord(val jda: JDA):
 
   def activity(activity: Activity): IO[Unit] = IO(jda.getPresence.setActivity(activity))
   def activity(string: String): IO[Unit]     = IO(jda.getPresence.setActivity(Activity.customStatus(string)))
+  def activity: IO[Option[String]]           = IO(Option(jda.getPresence.getActivity).map(_.getName))
 
   def clearActivity: IO[Unit] = IO(jda.getPresence.setActivity(null))
 

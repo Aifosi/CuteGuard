@@ -1,3 +1,3 @@
 package cuteguard.commands
 
-trait NoLog
+trait NoChannelLog

@@ -1,6 +1,6 @@
 package cuteguard
 
-import cuteguard.commands.{Command, NoLog}
+import cuteguard.commands.{Command, NoChannelLog}
 import cuteguard.model.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
 import cuteguard.model.event.MessageEvent.given
 import cuteguard.model.event.ReactionEvent.given
@@ -40,33 +40,34 @@ class MessageListener(
                 if stopped then IO.pure(true)
                 else
                   for
-                    _ <- if command.isInstanceOf[NoLog] then IO.unit else log(event, command)
-                    r <- command.apply(command.pattern, event)
-                  yield r
+                    continue <- command.apply(command.pattern, event)
+                    _        <- IO.unlessA(continue)(log(event, command))
+                  yield continue
             yield stop
           case (io, _)                                 => io
         }
         .void
     else IO.unit
 
-  private def log(event: Event, message: String): IO[Unit] =
+  private def log(event: Event, message: String, ignoreChannel: Boolean): IO[Unit] =
     for
       guild  <- event.guild
       mention = if guild.isOwner(event.author) then event.author.accountName else event.author.mention
-      _      <- discordLogger.logToChannel(mention + message)
+      _      <- IO.unlessA(ignoreChannel)(discordLogger.logToChannel(mention + message))
       _      <- Logger[IO].info(event.author.toString + message)
     yield ()
 
   override def onMessageReceived(event: MessageReceivedEvent): Unit =
     runCommandList(event, commander.textCommands) { (event, command) =>
       lazy val subgroups = command.pattern.findFirstMatchIn(event.content).get.subgroups.mkString(" ")
-      if command.pattern != Command.all then log(event, s" issued text command $command $subgroups".stripTrailing)
+      if command.pattern != Command.all then
+        log(event, s" issued text command $command $subgroups".stripTrailing, command.isInstanceOf[NoChannelLog])
       else IO.unit
     }.unsafeRunAndForget()
 
   override def onMessageReactionAdd(event: MessageReactionAddEvent): Unit =
     runCommandList(event, commander.reactionCommands) { (event, command) =>
-      log(event, s" issued reaction command $command".stripTrailing)
+      log(event, s" issued reaction command $command".stripTrailing, command.isInstanceOf[NoChannelLog])
     }.unsafeRunAndForget()
 
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit =
@@ -81,6 +82,7 @@ class MessageListener(
       log(
         event,
         s" issued slash command $command${if options.nonEmpty then s", options: $options" else ""}".stripTrailing,
+        command.isInstanceOf[NoChannelLog],
       )
     }.unsafeRunAndForget()
 
