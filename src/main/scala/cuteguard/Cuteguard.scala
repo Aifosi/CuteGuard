@@ -23,8 +23,7 @@ object Cuteguard extends IOApp.Simple:
       val fitness                    = Fitness(quadgrams)
       val commands: List[AnyCommand] = List(
         NotCute(cooldown),
-        // Subsmash,
-        // LumiPats,
+        WordFitness(fitness, config.subsmash),
         Subsmash(cooldown, fitness, discord, config.subsmash),
         Pleading(cooldown),
       )

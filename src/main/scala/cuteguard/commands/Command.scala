@@ -41,18 +41,17 @@ abstract class SlashCommand extends Command[SlashPattern, SlashCommandEvent]:
 
   val fullCommand: String
 
-  lazy val (command: String, subCommandGroup: Option[String], subCommand: Option[String]) =
-    fullCommand.split(" ").toList match {
-      case List(command, subCommandGroup, subCommand) => (command, Some(subCommandGroup), Some(subCommand))
-      case List(command, subCommand)                  => (command, None, Some(subCommand))
-      case List(command)                              => (command, None, None)
-      case _                                          => throw new Exception(s"Invalid command $fullCommand")
-    }
-
-  protected lazy val slashPattern: SlashPattern =
+  protected def slashPattern: SlashPattern =
+    val (command: String, subCommandGroup: Option[String], subCommand: Option[String]) =
+      fullCommand.split(" ").toList match {
+        case List(command, subCommandGroup, subCommand) => (command, Some(subCommandGroup), Some(subCommand))
+        case List(command, subCommand)                  => (command, None, Some(subCommand))
+        case List(command)                              => (command, None, None)
+        case _                                          => throw new Exception(s"Invalid command $fullCommand")
+      }
     SlashPattern(command, subCommandGroup, subCommand, description, isUserCommand)
 
-  override lazy val pattern: SlashPattern = slashPattern
+  override def pattern: SlashPattern = slashPattern
 
   override def matches(event: SlashCommandEvent): Boolean =
     event.fullCommand.equalsIgnoreCase(fullCommand)
