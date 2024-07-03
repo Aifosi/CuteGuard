@@ -59,9 +59,12 @@ class MessageListener(
 
   override def onMessageReceived(event: MessageReceivedEvent): Unit =
     runCommandList(event, commander.textCommands) { (event, command) =>
-      lazy val subgroups = command.pattern.findFirstMatchIn(event.content).get.subgroups.mkString(" ")
+      lazy val subgroupsText =
+        val subgroups = command.pattern.findFirstMatchIn(event.content).fold("")(_.subgroups.mkString(" "))
+        if subgroups.isBlank then event.content else subgroups
+
       if command.pattern != Command.all then
-        log(event, s" issued text command $command $subgroups".stripTrailing, command.isInstanceOf[NoChannelLog])
+        log(event, s" issued text command $command: $subgroupsText".stripTrailing, command.isInstanceOf[NoChannelLog])
       else IO.unit
     }.unsafeRunAndForget()
 

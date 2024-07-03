@@ -34,10 +34,7 @@ case class Subsmash(cooldown: Cooldown, fitness: Fitness, discord: Deferred[IO, 
                                         .minWordFitness(config.minLength)
       matches                      <-
         if quadgramsWordFitness > config.threshold then
-          for
-            _ <- Logger[IO].debug(s"Message Text: $messageText")
-            _ <- Logger[IO].debug(s"word: $word, Fitness: $quadgramsWordFitness")
-          yield true
+          Logger[IO].debug(s"word: $word, Fitness: $quadgramsWordFitness").as(true)
         else IO.pure(false)
     yield matches
 
