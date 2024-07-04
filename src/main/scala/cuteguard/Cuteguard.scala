@@ -1,40 +1,106 @@
 package cuteguard
 
-import cuteguard.Bot.Builder
 import cuteguard.commands.*
+import cuteguard.db.DoobieLogHandler
 import cuteguard.model.Discord
 
-import cats.effect.{Deferred, IO, IOApp}
+import cats.effect.*
+import cats.effect.unsafe.IORuntime
+import doobie.util.log.LogHandler
+import fs2.io.file.{Files, Path}
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.requests.GatewayIntent
+import org.flywaydb.core.Flyway
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 //https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications.commands&permissions=18432
 //https://discord.com/oauth2/authorize?client_id=990221153203281950&scope=bot%20applications.commands&permissions=18432 - Test
 object Cuteguard extends IOApp.Simple:
+  private def acquireDiscordClient(
+    discordDeferred: Deferred[IO, Discord],
+    token: String,
+    messageListener: MessageListener,
+  )(using Logger[IO]): IO[IO[Unit]] =
+    val acquire = IO {
+      JDABuilder
+        .createDefault(token)
+        .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
+        .addEventListeners(messageListener)
+        .build()
+        .awaitReady()
+    }
 
-  private def commanderBuilder(
-    config: CuteguardConfiguration,
-  )(using discordLogger: DiscordLogger) = new Builder[Commander[DiscordLogger]]:
-    override def apply(
-      discord: Deferred[IO, Discord],
-      quadgrams: Deferred[IO, Map[String, Double]],
-      cooldown: Cooldown,
-    )(using Logger[IO]): Commander[DiscordLogger] =
-      val fitness                    = Fitness(quadgrams)
-      val commands: List[AnyCommand] = List(
-        NotCute(cooldown),
-        WordFitness(fitness, config.subsmash),
-        Subsmash(cooldown, fitness, discord, config.subsmash),
-        Pleading(cooldown),
-      )
+    Resource
+      .make(acquire)(jda => IO(jda.shutdown()))
+      .map(new Discord(_))
+      .evalMap(discordDeferred.complete)
+      .evalTap(_ => Logger[IO].info("Loaded JDA"))
+      .allocated
+      .map(_(1))
 
-      Commander(discordLogger, commands)
+  private def loadQuadgrams(gramsDeferred: Deferred[IO, Map[String, Double]])(using Logger[IO]): IO[Unit] = Files[IO]
+    .readUtf8Lines(Path("quadgrams.csv"))
+    .map { string =>
+      val split = string.split(",")
+      (split.head.toLowerCase, split(1).toDouble)
+    }
+    .compile
+    .toList
+    .map(_.toMap.withDefaultValue(0d))
+    .flatMap(gramsDeferred.complete)
+    .flatMap(_ => Logger[IO].info("Loaded Quadgrams"))
+    .start
+    .void
+
+  private def runMigrations(postgresConfig: PostgresConfiguration)(using Logger[IO]): IO[Unit] =
+    for
+      flyway     <- IO {
+                      Flyway.configure
+                        .dataSource(postgresConfig.url, postgresConfig.user, postgresConfig.password)
+                        .validateMigrationNaming(true)
+                        .baselineOnMigrate(true)
+                        .load
+                    }
+      migrations <- IO(flyway.migrate())
+      _          <- Logger[IO].debug(s"Ran ${migrations.migrationsExecuted} migrations.")
+    yield ()
+
+  private def addCommands(
+    subsmashConfiguration: SubsmashConfiguration,
+    discord: Deferred[IO, Discord],
+    quadgrams: Deferred[IO, Map[String, Double]],
+    cooldown: Cooldown,
+  )(using Logger[IO]): Commander =
+    val fitness                    = Fitness(quadgrams)
+    val commands: List[AnyCommand] = List(
+      NotCute(cooldown),
+      WordFitness(fitness, subsmashConfiguration),
+      Subsmash(cooldown, fitness, discord, subsmashConfiguration),
+      Pleading(cooldown),
+    )
+
+    Commander(commands)
 
   override def run: IO[Unit] =
     for
-      given Logger[IO]    <- Slf4jLogger.create[IO]
-      config              <- CuteguardConfiguration.fromConfig()
-      discordDeferred     <- Deferred[IO, Discord]
-      given DiscordLogger <- DiscordLogger(discordDeferred, config.discord)
-      _                   <- Bot.run(config.discord, discordDeferred, config.cooldown, commanderBuilder(config))(using runtime)
+      given Logger[IO] <- Slf4jLogger.create[IO]
+      config           <- CuteguardConfiguration.fromConfig()
+      _                <- runMigrations(config.postgres)
+
+      discordDeferred <- Deferred[IO, Discord]
+      gramsDeferred   <- Deferred[IO, Map[String, Double]]
+
+      given DiscordLogger  <- DiscordLogger(discordDeferred, config.discord)
+      given LogHandler[IO] <- DoobieLogHandler.create
+
+      cooldown       <- Cooldown(config.cooldown)
+      commander       = addCommands(config.subsmash, discordDeferred, gramsDeferred, cooldown)
+      given IORuntime = runtime
+      messageListener = new MessageListener(commander)
+      _              <- loadQuadgrams(gramsDeferred)
+      releaseDiscord <- acquireDiscordClient(discordDeferred, config.discord.token, messageListener)
+      _              <- commander.registerSlashCommands(discordDeferred).start
+      _              <- IO.never
+      _              <- releaseDiscord
     yield ()

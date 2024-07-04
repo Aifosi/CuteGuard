@@ -20,7 +20,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
 class MessageListener(
-  commander: Commander[?],
+  commander: Commander,
 )(using l: Logger[IO], r: IORuntime, discordLogger: DiscordLogger)
     extends ListenerAdapter:
   private def runCommandList[T, E <: Event](

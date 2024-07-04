@@ -16,6 +16,7 @@ case class SubsmashConfiguration(
 
 case class CuteguardConfiguration(
   discord: DiscordConfiguration,
+  postgres: PostgresConfiguration,
   subsmash: SubsmashConfiguration,
   cooldown: FiniteDuration,
 ) derives ConfigReader

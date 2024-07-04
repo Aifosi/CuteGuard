@@ -8,10 +8,7 @@ import cats.effect.{Deferred, IO}
 import cats.syntax.foldable.*
 import org.typelevel.log4cats.Logger
 
-import scala.util.chaining.*
-
-case class Commander[Log <: DiscordLogger](
-  logger: Log,
+class Commander private (
   commands: List[AnyCommand],
 )(using Logger[IO]):
   lazy val textCommands: List[TextCommand]                = commands.collect { case command: TextCommand =>
@@ -43,6 +40,5 @@ case class Commander[Log <: DiscordLogger](
     _               <- Logger[IO].info("All Slash commands registered.")
   yield ()
 
-  def withDefaults: Commander[Log] =
-    val allCommands = commands.pipe(commands => commands :+ new Help(commands))
-    copy(commands = allCommands)
+object Commander:
+  def apply(commands: List[AnyCommand])(using Logger[IO]): Commander = new Commander(commands :+ new Help(commands))

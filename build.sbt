@@ -76,7 +76,7 @@ scalacOptions ++= Seq(
 libraryDependencies ++= Seq(
   apacheLang,
   catsEffect,
-  circeCore,
+  circe,
   circeParser,
   catsRetry,
   fs2,
@@ -86,17 +86,25 @@ libraryDependencies ++= Seq(
   logbackClassic,
   pureconfig,
   pureconfigCE,
+  postgres,
+  flyway,
+  doobie,
+  doobiePostgres,
 )
 
 lazy val apacheLang     = "org.apache.commons"     % "commons-lang3"          % "3.14.0"
 lazy val catsEffect     = "org.typelevel"         %% "cats-effect"            % "3.5.0"
-lazy val circeCore      = "io.circe"              %% "circe-core"             % "0.14.7"
-lazy val circeParser    = "io.circe"              %% "circe-parser"           % circeCore.revision
+lazy val circe          = "io.circe"              %% "circe-core"             % "0.14.7"
+lazy val circeParser    = circe.organization      %% "circe-parser"           % circe.revision
 lazy val catsRetry      = "com.github.cb372"      %% "cats-retry"             % "3.1.3"
 lazy val fs2            = "co.fs2"                %% "fs2-core"               % "3.10.2"
-lazy val fs2IO          = "co.fs2"                %% "fs2-io"                 % fs2.revision
+lazy val fs2IO          = fs2.organization        %% "fs2-io"                 % fs2.revision
 lazy val jda            = "net.dv8tion"            % "JDA"                    % "5.0.0-beta.20"
 lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"         % "2.6.0"
 lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"        % "1.5.6"
 lazy val pureconfig     = "com.github.pureconfig" %% "pureconfig-core"        % "0.17.7"
 lazy val pureconfigCE   = pureconfig.organization %% "pureconfig-cats-effect" % pureconfig.revision
+lazy val postgres       = "org.postgresql"         % "postgresql"             % "42.7.3"
+lazy val flyway         = "org.flywaydb"           % "flyway-core"            % "9.16.0"
+lazy val doobie         = "org.tpolecat"          %% "doobie-core"            % "1.0.0-RC5"
+lazy val doobiePostgres = doobie.organization     %% "doobie-postgres"        % doobie.revision
