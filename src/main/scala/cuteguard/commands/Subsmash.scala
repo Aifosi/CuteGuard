@@ -2,6 +2,7 @@ package cuteguard.commands
 
 import cuteguard.{Fitness, SubsmashConfiguration}
 import cuteguard.Cooldown
+import cuteguard.model.Action
 import cuteguard.model.discord.{Discord, Embed}
 import cuteguard.model.discord.event.MessageEvent
 
@@ -56,7 +57,7 @@ case class Subsmash(cooldown: Cooldown, fitness: Fitness, discord: Deferred[IO, 
       members    <- guild.members.compile.toList
       memberNames = members.flatMap(_.guildName.sanitise.split(" ")).toSet.filter(_.length >= 4)
       matches    <- matches(event.content.sanitise, memberNames)
-      continue   <- if matches then cooldown.interact(event.author)(sendReply(event)) else IO.pure(true)
+      continue   <- if matches then cooldown.interact(event.author)(Action.Subsmash, sendReply(event)) else IO.pure(true)
     yield continue
 
   override val description: String = "Responds when a user says they are not cute"

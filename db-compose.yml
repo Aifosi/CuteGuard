@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db:
+    image: library/postgres:16
+    container_name: book-of-aifosi-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: cuteguard
+      POSTGRES_PASSWORD: cuteguard
+      POSTGRES_DB: cuteguard
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready'" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3

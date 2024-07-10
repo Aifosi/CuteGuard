@@ -80,9 +80,9 @@ object Cuteguard extends IOApp.Simple:
     val fitness                    = Fitness(quadgrams)
     val commands: List[AnyCommand] = List(
       NotCute(cooldown),
-      WordFitness(fitness, subsmashConfiguration),
-      Subsmash(cooldown, fitness, discord, subsmashConfiguration),
       Pleading(cooldown),
+      Subsmash(cooldown, fitness, discord, subsmashConfiguration),
+      WordFitness(fitness, subsmashConfiguration),
       ActionCommand(events, counterChannel, Action.Edge),
       ActionCommand(events, counterChannel, Action.Ruin),
       ActionCommand(events, counterChannel, Action.Orgasm),
@@ -109,7 +109,7 @@ object Cuteguard extends IOApp.Simple:
       users  = Users(guild)
       events = Events(users)
 
-      cooldown       <- Cooldown(config.cooldown)
+      cooldown       <- Cooldown(config.cooldown, events)
       commander       = addCommands(config.subsmash, discordDeferred, gramsDeferred, cooldown, events, counterChannel)
       given IORuntime = runtime
       messageListener = new MessageListener(commander)

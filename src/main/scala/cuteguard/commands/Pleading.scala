@@ -1,6 +1,7 @@
 package cuteguard.commands
 
 import cuteguard.Cooldown
+import cuteguard.model.Action
 import cuteguard.model.discord.Embed
 import cuteguard.model.discord.event.MessageEvent
 
@@ -20,6 +21,6 @@ case class Pleading(cooldown: Cooldown) extends TextCommand with NoChannelLog:
       "https://cdn.discordapp.com/attachments/988232177265291324/1253319448954277949/nobottom.webp",
       "created by a sneaky totally not cute kitty",
     )
-    cooldown.interact(event.author)(event.reply(embed).void)
+    cooldown.interact(event.author)(Action.Pleading, event.reply(embed).void)
 
   override val description: String = "Responds when a user says they are not cute"
