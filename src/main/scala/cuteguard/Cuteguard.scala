@@ -99,9 +99,9 @@ object Cuteguard extends IOApp.Simple:
       discordDeferred <- Deferred[IO, Discord]
       gramsDeferred   <- Deferred[IO, Map[String, Double]]
 
-      given DiscordLogger  <- DiscordLogger(discordDeferred, config.discord)
       given LogHandler[IO] <- DoobieLogHandler.create
       given Transactor[IO]  = config.postgres.transactor
+      given DiscordLogger  <- DiscordLogger(discordDeferred, config.discord)
 
       guild          = EitherT.liftF(discordDeferred.get).flatMap(_.guildByID(config.guildID))
       counterChannel = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.counterChannelID)).value.rethrow

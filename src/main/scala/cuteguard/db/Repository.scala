@@ -22,7 +22,7 @@ extension (filters: List[Filter])
 
 trait RepositoryFields:
   protected val table: Fragment
-  protected val allColumns: List[String]
+  protected lazy val allColumns: List[String]
 
 trait Insert[DB: Read]:
   this: RepositoryFields =>

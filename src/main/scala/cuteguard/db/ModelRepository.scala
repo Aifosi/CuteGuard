@@ -23,12 +23,12 @@ trait ModelRepository[DB: Read, Model](using val transactor: Transactor[IO]) ext
   def toModel(a: DB): Maybe[Model]
   protected val columns: List[String]
 
-  final override protected val allColumns: List[String] = "id" +: columns
-  final def unsafeToModel(a: DB): IO[Model]             = toModel(a).rethrowT
+  final override protected lazy val allColumns: List[String] = "id" +: columns
+  final def unsafeToModel(a: DB): IO[Model]                  = toModel(a).rethrowT
 
   private[db] object Repo extends Repository[DB]:
-    override protected val table: Fragment          = outer.table
-    override protected val allColumns: List[String] = outer.allColumns
+    override protected val table: Fragment               = outer.table
+    override protected lazy val allColumns: List[String] = outer.allColumns
 
   private inline def toModelList(dbModel: DB): IO[List[Model]] = toModel(dbModel).value.map(_.toSeq.toList)
 
