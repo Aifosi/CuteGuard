@@ -16,5 +16,10 @@ services:
     image: aifosi/cuteguard:latest
     user: root
     restart: "unless-stopped"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOSTNAME: "db"
     volumes:
       - "./src/main/resources/application.conf:/opt/docker/conf/application.conf"

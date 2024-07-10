@@ -31,12 +31,14 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
         event.replyEphemeral(s"This command can only be used in ${counterChanned.mention}.")
       case _ if amount <= 0                                                      =>
         event.replyEphemeral("Amount must be greater than 0.")
+      case _ if giver.contains(event.author)                                     =>
+        event.replyEphemeral(s"You cannot give yourself $actionName.")
       case _                                                                     =>
         for
-          _         <- events.add(event.author, giver, Action.Ruin, amount)
-          actionName = if amount == 1 then singleActionName else singleActionName
-          givenBy    = giver.fold("")(giver => s" given by ${giver.mention}")
-          _         <-
-            event.reply(s"${event.author.mention} just did $amount $actionName$givenBy.")
+          _      <- events.add(event.author, giver, action, amount)
+          action  = if amount == 1 then singleActionName else actionName
+          givenBy = giver.fold("")(giver => s" given by ${giver.mention}")
+          _      <-
+            event.reply(s"${event.author.mention} just did $amount $action$givenBy.")
         yield ()
     }.as(true)
