@@ -1,4 +1,4 @@
-package cuteguard.model
+package cuteguard.model.discord
 
 import cuteguard.syntax.action.*
 import cuteguard.syntax.io.*

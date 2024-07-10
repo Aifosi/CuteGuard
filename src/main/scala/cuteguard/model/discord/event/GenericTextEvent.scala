@@ -1,4 +1,4 @@
-package cuteguard.model.event
+package cuteguard.model.discord.event
 
 import net.dv8tion.jda.api.entities.{Guild as JDAGuild, Member as JDAMember, User as JDAUser}
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel

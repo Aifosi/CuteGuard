@@ -1,7 +1,7 @@
-package cuteguard.model.event
+package cuteguard.model.discord.event
 
 import cuteguard.commands.MacroHelper
-import cuteguard.model.Message
+import cuteguard.model.discord.Message
 import cuteguard.syntax.action.*
 
 import cats.effect.IO

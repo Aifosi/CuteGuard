@@ -1,7 +1,6 @@
 package cuteguard
 
-import cuteguard.model.DiscordID
-import cuteguard.model.User
+import cuteguard.model.discord.{DiscordID, User}
 
 import cats.effect.{IO, Ref}
 

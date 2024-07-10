@@ -1,7 +1,7 @@
-package cuteguard.model.event
+package cuteguard.model.discord.event
 
-import cuteguard.model.{DiscordID, Message}
-import cuteguard.model.toLong
+import cuteguard.model.discord.{DiscordID, Message}
+import cuteguard.model.discord.toLong
 import cuteguard.syntax.all.*
 
 import cats.effect.IO

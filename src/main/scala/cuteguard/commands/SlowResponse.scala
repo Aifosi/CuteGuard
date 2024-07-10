@@ -1,7 +1,7 @@
 package cuteguard.commands
 
-import cuteguard.model.Message
-import cuteguard.model.event.{SlashAPI, SlashCommandEvent}
+import cuteguard.model.discord.Message
+import cuteguard.model.discord.event.{SlashAPI, SlashCommandEvent}
 
 import cats.data.EitherT
 import cats.effect.{IO, Ref}

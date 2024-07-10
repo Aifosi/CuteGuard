@@ -1,6 +1,6 @@
 package cuteguard.db
 
-import cuteguard.model.DiscordID
+import cuteguard.model.discord.DiscordID
 
 import cats.syntax.option.*
 import doobie.*

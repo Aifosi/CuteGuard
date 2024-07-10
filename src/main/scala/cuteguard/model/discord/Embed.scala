@@ -1,4 +1,4 @@
-package cuteguard.model
+package cuteguard.model.discord
 
 import net.dv8tion.jda.api.EmbedBuilder
 

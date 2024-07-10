@@ -1,10 +1,10 @@
 package cuteguard
 
 import cuteguard.commands.{Command, NoChannelLog}
-import cuteguard.model.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
-import cuteguard.model.event.MessageEvent.given
-import cuteguard.model.event.ReactionEvent.given
-import cuteguard.model.event.SlashCommandEvent.given
+import cuteguard.model.discord.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
+import cuteguard.model.discord.event.MessageEvent.given
+import cuteguard.model.discord.event.ReactionEvent.given
+import cuteguard.model.discord.event.SlashCommandEvent.given
 import cuteguard.syntax.io.*
 
 import cats.effect.IO

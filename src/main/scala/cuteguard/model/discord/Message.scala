@@ -1,5 +1,6 @@
-package cuteguard.model
+package cuteguard.model.discord
 
+import cuteguard.model.discord.User
 import cuteguard.syntax.action.*
 
 import cats.effect.IO

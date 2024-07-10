@@ -1,6 +1,6 @@
 package cuteguard
 
-import cuteguard.model.DiscordID
+import cuteguard.model.discord.DiscordID
 
 import pureconfig.ConfigReader
 import pureconfig.generic.derivation.default.derived

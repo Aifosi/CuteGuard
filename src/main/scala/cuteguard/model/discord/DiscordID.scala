@@ -1,4 +1,4 @@
-package cuteguard.model
+package cuteguard.model.discord
 
 import doobie.{Get, Put}
 import doobie.util.{Read, Write}

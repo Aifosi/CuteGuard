@@ -1,7 +1,7 @@
 package cuteguard.commands
 
 import cuteguard.Named
-import cuteguard.model.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
+import cuteguard.model.discord.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
 
 import cats.effect.IO
 import org.typelevel.log4cats.Logger

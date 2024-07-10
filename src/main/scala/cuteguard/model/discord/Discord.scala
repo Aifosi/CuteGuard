@@ -1,6 +1,6 @@
-package cuteguard.model
+package cuteguard.model.discord
 
-import cuteguard.model.Discord.*
+import cuteguard.model.discord.Discord.*
 import cuteguard.syntax.action.*
 import cuteguard.utils.Maybe
 

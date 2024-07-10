@@ -1,4 +1,4 @@
-package cuteguard.model.event
+package cuteguard.model.discord.event
 
 import cuteguard.commands.MacroHelper
 

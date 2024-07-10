@@ -2,7 +2,7 @@ package cuteguard
 
 import cuteguard.commands.*
 import cuteguard.db.DoobieLogHandler
-import cuteguard.model.Discord
+import cuteguard.model.discord.Discord
 
 import cats.effect.*
 import cats.effect.unsafe.IORuntime

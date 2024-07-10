@@ -1,6 +1,6 @@
-package cuteguard.model
+package cuteguard.model.discord
 
-import cuteguard.model.Discord.*
+import cuteguard.model.discord.Discord.*
 import cuteguard.syntax.action.*
 import cuteguard.syntax.io.*
 import cuteguard.syntax.task.*
@@ -8,8 +8,7 @@ import cuteguard.utils.Maybe
 
 import cats.effect.IO
 import fs2.Stream
-import net.dv8tion.jda.api.entities.Guild as JDAGuild
-import net.dv8tion.jda.api.entities.User as JDAUser
+import net.dv8tion.jda.api.entities.{Guild as JDAGuild, User as JDAUser}
 import net.dv8tion.jda.api.interactions.commands.Command as JDACommand
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
 

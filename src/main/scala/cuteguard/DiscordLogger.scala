@@ -1,6 +1,6 @@
 package cuteguard
 
-import cuteguard.model.{Channel, Discord, DiscordID}
+import cuteguard.model.discord.{Channel, Discord, DiscordID}
 import cuteguard.syntax.io.*
 import cuteguard.syntax.stream.*
 

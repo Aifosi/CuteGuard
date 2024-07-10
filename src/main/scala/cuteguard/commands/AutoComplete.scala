@@ -1,6 +1,6 @@
 package cuteguard.commands
 
-import cuteguard.model.event.AutoCompleteEvent
+import cuteguard.model.discord.event.AutoCompleteEvent
 
 import cats.effect.IO
 import cats.syntax.applicative.*

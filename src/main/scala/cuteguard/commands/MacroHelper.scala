@@ -1,6 +1,6 @@
 package cuteguard.commands
 
-import cuteguard.model.{Channel, Role, User}
+import cuteguard.model.discord.{Channel, Role, User}
 import cuteguard.syntax.action.*
 
 import cats.effect.IO

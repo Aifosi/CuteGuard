@@ -1,7 +1,7 @@
 package cuteguard
 
 import cuteguard.commands.*
-import cuteguard.model.{Discord, DiscordID}
+import cuteguard.model.discord.{Discord, DiscordID}
 import cuteguard.syntax.action.*
 
 import cats.effect.{Deferred, IO}

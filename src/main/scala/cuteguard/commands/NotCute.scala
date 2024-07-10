@@ -1,8 +1,8 @@
 package cuteguard.commands
 
 import cuteguard.Cooldown
-import cuteguard.model.Embed
-import cuteguard.model.event.MessageEvent
+import cuteguard.model.discord.Embed
+import cuteguard.model.discord.event.MessageEvent
 
 import cats.effect.IO
 import org.apache.commons.lang3.StringUtils.stripAccents

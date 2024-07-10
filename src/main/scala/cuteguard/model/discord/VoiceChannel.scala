@@ -1,4 +1,4 @@
-package cuteguard.model
+package cuteguard.model.discord
 
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel as JDAVoiceChannel

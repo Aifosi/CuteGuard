@@ -1,6 +1,6 @@
-package cuteguard.model.event
+package cuteguard.model.discord.event
 
-import cuteguard.model.Message
+import cuteguard.model.discord.Message
 
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.{

@@ -1,7 +1,7 @@
 package cuteguard.commands
 
 import cuteguard.{Fitness, SubsmashConfiguration}
-import cuteguard.model.event.SlashCommandEvent
+import cuteguard.model.discord.event.SlashCommandEvent
 
 import cats.effect.IO
 import org.typelevel.log4cats.Logger

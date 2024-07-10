@@ -2,9 +2,8 @@ package cuteguard.commands
 
 import cuteguard.{Fitness, SubsmashConfiguration}
 import cuteguard.Cooldown
-import cuteguard.model.Discord
-import cuteguard.model.Embed
-import cuteguard.model.event.MessageEvent
+import cuteguard.model.discord.{Discord, Embed}
+import cuteguard.model.discord.event.MessageEvent
 
 import cats.effect.*
 import cats.instances.option.*
