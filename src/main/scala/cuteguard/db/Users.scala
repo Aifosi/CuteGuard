@@ -1,7 +1,8 @@
 package cuteguard.db
 
+import cuteguard.db.Filters.*
 import cuteguard.model.User as CuteguardUser
-import cuteguard.model.discord.{DiscordID, Guild}
+import cuteguard.model.discord.{DiscordID, Guild, User as DiscordUser}
 import cuteguard.utils.Maybe
 
 import cats.effect.IO
@@ -17,16 +18,21 @@ case class User(
   discordID: DiscordID,
 )
 
-class Users(guild: Guild)(using Transactor[IO]) extends ModelRepository[User, CuteguardUser]:
+class Users(guild: Maybe[Guild])(using Transactor[IO]) extends ModelRepository[User, CuteguardUser]:
   override protected val table: Fragment = fr"users"
 
   override protected val columns: List[String]           = List(
-    "id",
     "user_discord_id",
   )
-  override def toModel(user: User): Maybe[CuteguardUser] = guild.member(user.discordID).map { member =>
-    CuteguardUser(
+  override def toModel(user: User): Maybe[CuteguardUser] =
+    for
+      guild  <- guild
+      member <- guild.member(user.discordID)
+    yield CuteguardUser(
       user.id,
       member,
     )
-  }
+
+  def add(user: DiscordUser): IO[CuteguardUser] =
+    find(user.discordID.equalDiscordID)
+      .getOrElseF(insertOne(user.discordID)(columns*))

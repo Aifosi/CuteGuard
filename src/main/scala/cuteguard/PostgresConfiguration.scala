@@ -12,7 +12,7 @@ final case class PostgresConfiguration(
   password: String,
   url: String,
 ) derives ConfigReader:
-  def transactor(logHandler: LogHandler[IO]): Transactor[IO] = Transactor.fromDriverManager[IO](
+  def transactor(using logHandler: LogHandler[IO]): Transactor[IO] = Transactor.fromDriverManager[IO](
     driver,
     url,
     user,

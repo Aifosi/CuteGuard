@@ -1,5 +1,7 @@
 package cuteguard
 
+import cuteguard.model.discord.DiscordID
+
 import cats.effect.IO
 import com.typesafe.config.{Config, ConfigFactory}
 import pureconfig.{ConfigReader, ConfigSource}
@@ -19,6 +21,8 @@ case class CuteguardConfiguration(
   postgres: PostgresConfiguration,
   subsmash: SubsmashConfiguration,
   cooldown: FiniteDuration,
+  guildID: DiscordID,
+  counterChannelID: DiscordID,
 ) derives ConfigReader
 
 object CuteguardConfiguration:

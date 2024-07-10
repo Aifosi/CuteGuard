@@ -22,7 +22,7 @@ extension (filters: List[Filter])
 
 trait RepositoryFields:
   protected val table: Fragment
-  protected val columns: List[String]
+  protected val allColumns: List[String]
 
 trait Insert[DB: Read]:
   this: RepositoryFields =>
@@ -34,10 +34,10 @@ trait Insert[DB: Read]:
     fr"insert into $table".internals.sql + columns.mkString("(", ", ", ") values") + unknowns(columns.length)
 
   def insertOne[Info: Write](info: Info)(columns: String*): ConnectionIO[DB] =
-    Update[Info](sql(columns*)).withUniqueGeneratedKeys[DB](this.columns*)(info)
+    Update[Info](sql(columns*)).withUniqueGeneratedKeys[DB](this.allColumns*)(info)
 
   def insertMany[Info: Write](info: List[Info])(columns: String*): Stream[ConnectionIO, DB] =
-    Update[Info](sql(columns*)).updateManyWithGeneratedKeys[DB](this.columns*)(info)
+    Update[Info](sql(columns*)).updateManyWithGeneratedKeys[DB](this.allColumns*)(info)
 
 trait Remove[DB: Read]:
   this: Repository[DB] =>
@@ -56,15 +56,15 @@ trait Repository[DB: Read] extends RepositoryFields with Insert[DB] with Remove[
 
   protected inline def innerUpdateMany(updates: Filter*)(where: Fragment, more: Fragment*): ConnectionIO[List[DB]] =
     updateQuery(updates*)(where, more*)
-      .withGeneratedKeys[DB](columns*)
+      .withGeneratedKeys[DB](allColumns*)
       .compile
       .toList
 
   protected inline def innerUpdate(updates: Filter*)(where: Fragment, more: Fragment*): ConnectionIO[DB] =
     updateQuery(updates*)(where, more*)
-      .withUniqueGeneratedKeys[DB](columns*)
+      .withUniqueGeneratedKeys[DB](allColumns*)
 
-  protected lazy val selectAll: Fragment = Fragment.const(columns.mkString("select ", ", ", " from")) ++ table
+  protected lazy val selectAll: Fragment = Fragment.const(allColumns.mkString("select ", ", ", " from")) ++ table
 
   private def query(filters: Iterable[Filter]) =
     (selectAll ++ filters.toList.combineFilters).query[DB]

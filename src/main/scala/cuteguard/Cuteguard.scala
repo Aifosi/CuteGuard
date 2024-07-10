@@ -1,12 +1,15 @@
 package cuteguard
 
 import cuteguard.commands.*
-import cuteguard.db.DoobieLogHandler
-import cuteguard.model.discord.Discord
+import cuteguard.db.{DoobieLogHandler, Events, Users}
+import cuteguard.model.Action
+import cuteguard.model.discord.{Channel, Discord}
 
+import cats.data.EitherT
 import cats.effect.*
 import cats.effect.unsafe.IORuntime
 import doobie.util.log.LogHandler
+import doobie.util.transactor.Transactor
 import fs2.io.file.{Files, Path}
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.GatewayIntent
@@ -71,6 +74,8 @@ object Cuteguard extends IOApp.Simple:
     discord: Deferred[IO, Discord],
     quadgrams: Deferred[IO, Map[String, Double]],
     cooldown: Cooldown,
+    events: Events,
+    counterChannel: IO[Channel],
   )(using Logger[IO]): Commander =
     val fitness                    = Fitness(quadgrams)
     val commands: List[AnyCommand] = List(
@@ -78,6 +83,9 @@ object Cuteguard extends IOApp.Simple:
       WordFitness(fitness, subsmashConfiguration),
       Subsmash(cooldown, fitness, discord, subsmashConfiguration),
       Pleading(cooldown),
+      ActionCommand(events, counterChannel, Action.Edge),
+      ActionCommand(events, counterChannel, Action.Ruin),
+      ActionCommand(events, counterChannel, Action.Orgasm),
     )
 
     Commander(commands)
@@ -93,9 +101,16 @@ object Cuteguard extends IOApp.Simple:
 
       given DiscordLogger  <- DiscordLogger(discordDeferred, config.discord)
       given LogHandler[IO] <- DoobieLogHandler.create
+      given Transactor[IO]  = config.postgres.transactor
+
+      guild          = EitherT.liftF(discordDeferred.get).flatMap(_.guildByID(config.guildID))
+      counterChannel = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.counterChannelID)).value.rethrow
+
+      users  = Users(guild)
+      events = Events(users)
 
       cooldown       <- Cooldown(config.cooldown)
-      commander       = addCommands(config.subsmash, discordDeferred, gramsDeferred, cooldown)
+      commander       = addCommands(config.subsmash, discordDeferred, gramsDeferred, cooldown, events, counterChannel)
       given IORuntime = runtime
       messageListener = new MessageListener(commander)
       _              <- loadQuadgrams(gramsDeferred)

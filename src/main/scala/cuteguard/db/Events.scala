@@ -1,7 +1,8 @@
 package cuteguard.db
 
+import cuteguard.db.Filters.*
 import cuteguard.model.{Action, Event as CuteguardEvent}
-import cuteguard.model.discord.{DiscordID, Guild}
+import cuteguard.model.discord.User as DiscordUser
 import cuteguard.utils.Maybe
 
 import cats.data.EitherT
@@ -17,17 +18,16 @@ import java.util.UUID
 import scala.util.Try
 case class Event(
   id: UUID,
-  receiverUserId: DiscordID,
-  issuerUserId: Option[DiscordID],
+  receiverUserId: UUID,
+  issuerUserId: Option[UUID],
   action: String,
   amount: Int,
 )
 
-class Events(guild: Guild)(using Transactor[IO]) extends ModelRepository[Event, CuteguardEvent]:
+class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, CuteguardEvent]:
   override protected val table: Fragment = fr"events"
 
   override protected val columns: List[String] = List(
-    "id",
     "receiver_user_id",
     "issuer_user_id",
     "action",
@@ -36,8 +36,8 @@ class Events(guild: Guild)(using Transactor[IO]) extends ModelRepository[Event, 
 
   override def toModel(event: Event): Maybe[CuteguardEvent] =
     for
-      receiver <- guild.member(event.receiverUserId)
-      issuer   <- event.issuerUserId.traverse(guild.member)
+      receiver <- EitherT.liftF(users.get(event.receiverUserId.equalID))
+      issuer   <- EitherT.liftF(event.issuerUserId.traverse(issuerUserId => users.get(issuerUserId.equalID)))
       action   <- EitherT.fromEither[IO](Try(Action.valueOf(event.action)).toEither)
     yield CuteguardEvent(
       event.id,
@@ -46,3 +46,10 @@ class Events(guild: Guild)(using Transactor[IO]) extends ModelRepository[Event, 
       action,
       event.amount,
     )
+
+  def add(user: DiscordUser, giver: Option[DiscordUser], action: Action, amount: Int): IO[CuteguardEvent] =
+    for
+      receiver <- users.add(user)
+      issuer   <- giver.traverse(users.add)
+      event    <- insertOne((receiver.id, issuer.map(_.id), action.toString, amount))(columns*)
+    yield event

@@ -21,12 +21,14 @@ trait ThoroughList[DB: Read, Model, ID]:
 trait ModelRepository[DB: Read, Model](using val transactor: Transactor[IO]) extends RepositoryFields:
   outer =>
   def toModel(a: DB): Maybe[Model]
+  protected val columns: List[String]
 
-  final def unsafeToModel(a: DB): IO[Model] = toModel(a).rethrowT
+  final override protected val allColumns: List[String] = "id" +: columns
+  final def unsafeToModel(a: DB): IO[Model]             = toModel(a).rethrowT
 
   private[db] object Repo extends Repository[DB]:
-    override protected val table: Fragment       = outer.table
-    override protected val columns: List[String] = outer.columns
+    override protected val table: Fragment          = outer.table
+    override protected val allColumns: List[String] = outer.allColumns
 
   private inline def toModelList(dbModel: DB): IO[List[Model]] = toModel(dbModel).value.map(_.toSeq.toList)
 
@@ -48,8 +50,8 @@ trait ModelRepository[DB: Read, Model](using val transactor: Transactor[IO]) ext
   def remove(filter: Filter, moreFilters: Filter*): IO[Int] =
     Repo.remove(filter, moreFilters*).transact(transactor)
 
-  def insertOne[Info: Write](info: Info)(columns: String*): IO[DB] =
-    Repo.insertOne(info)(columns*).transact(transactor)
+  def insertOne[Info: Write](info: Info)(columns: String*): IO[Model] =
+    Repo.insertOne(info)(columns*).transact(transactor).flatMap(unsafeToModel)
 
   /*def insertMany[Info: Write](info: List[Info])(columns: String*): Stream[IO, DB] =
     Repo.insertMany(info)(columns*).transact(transactor)*/
