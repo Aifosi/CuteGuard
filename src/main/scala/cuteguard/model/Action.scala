@@ -1,4 +1,26 @@
 package cuteguard.model
 
-enum Action:
-  case Orgasm, Edge, Ruin, Subsmash, NotCute, Pleading
+import doobie.{Get, Put}
+
+import scala.util.Try
+
+enum Action(pluralTransformer: String => String):
+  case Orgasm   extends Action(_ + "s")
+  case Edge     extends Action(_ + "s")
+  case Ruin     extends Action(_ + "s")
+  case WetDream extends Action(_ + "s")
+  case Subsmash extends Action(_ + "es")
+  case NotCute  extends Action(_ + "s")
+  case Pleading extends Action(_ + "s")
+
+  lazy val show: String   = toString.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase
+  lazy val plural: String = pluralTransformer(show)
+
+object Action:
+  /*  given Read[Action] = Read.fromGet[Long]
+
+  given Write[Action] = Write.fromPut[Long]*/
+
+  given Get[Action] = Get[String].temap(action => Try(Action.valueOf(action)).toEither.left.map(_.getMessage))
+
+  given Put[Action] = Put[String].tcontramap(_.toString)

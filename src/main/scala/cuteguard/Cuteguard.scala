@@ -86,6 +86,8 @@ object Cuteguard extends IOApp.Simple:
       ActionCommand(events, counterChannel, Action.Edge),
       ActionCommand(events, counterChannel, Action.Ruin),
       ActionCommand(events, counterChannel, Action.Orgasm),
+      ActionCommand(events, counterChannel, Action.WetDream),
+      Total(events),
     )
 
     Commander(commands)
