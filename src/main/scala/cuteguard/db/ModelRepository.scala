@@ -32,25 +32,25 @@ trait ModelRepository[DB: Read, Model](using val transactor: Transactor[IO]) ext
 
   private inline def toModelList(dbModel: DB): IO[List[Model]] = toModel(dbModel).value.map(_.toSeq.toList)
 
-  def list(filters: Filter*): IO[List[Model]] =
+  protected def list(filters: Filter*): IO[List[Model]] =
     Repo.list(filters*).transact(transactor).flatMap(_.flatTraverse(toModelList))
 
-  def find(filters: Filter*): OptionT[IO, Model] =
+  protected def find(filters: Filter*): OptionT[IO, Model] =
     Repo.find(filters*).transact(transactor).flatMap(toModel(_).toOption)
 
-  def get(filters: Filter*): IO[Model] =
+  protected def get(filters: Filter*): IO[Model] =
     Repo.get(filters*).transact(transactor).flatMap(unsafeToModel)
 
-  def update(updates: Filter*)(where: Fragment, more: Fragment*): IO[Model] =
+  protected def update(updates: Filter*)(where: Fragment, more: Fragment*): IO[Model] =
     Repo.update(updates*)(where, more*).transact(transactor).flatMap(unsafeToModel)
 
-  def updateMany(updates: Filter*)(where: Fragment, more: Fragment*): IO[List[Model]] =
+  protected def updateMany(updates: Filter*)(where: Fragment, more: Fragment*): IO[List[Model]] =
     Repo.updateMany(updates*)(where, more*).transact(transactor).flatMap(_.traverse(unsafeToModel))
 
-  def remove(filter: Filter, moreFilters: Filter*): IO[Int] =
+  protected def remove(filter: Filter, moreFilters: Filter*): IO[Int] =
     Repo.remove(filter, moreFilters*).transact(transactor)
 
-  def insertOne[Info: Write](info: Info)(columns: String*): IO[Model] =
+  protected def insertOne[Info: Write](info: Info)(columns: String*): IO[Model] =
     Repo.insertOne(info)(columns*).transact(transactor).flatMap(unsafeToModel)
 
   /*def insertMany[Info: Write](info: List[Info])(columns: String*): Stream[IO, DB] =

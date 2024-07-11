@@ -36,9 +36,8 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
 
   override def toModel(event: Event): Maybe[CuteguardEvent] =
     for
-      receiver <- EitherT.liftF(users.get(event.receiverUserId.equalID))
-      issuer   <- EitherT.liftF(event.issuerUserId.traverse(issuerUserId => users.get(issuerUserId.equalID)))
-    // action   <- EitherT.fromEither[IO](Try(Action.valueOf(event.action)).toEither)
+      receiver <- EitherT.liftF(users.getByID(event.receiverUserId))
+      issuer   <- EitherT.liftF(event.issuerUserId.traverse(users.getByID))
     yield CuteguardEvent(
       event.id,
       receiver,
@@ -54,15 +53,15 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       event    <- insertOne((receiver.id, issuer.map(_.id), action, amount))(columns*)
     yield event
 
-  def list(user: DiscordUser, giver: Option[DiscordUser], action: Action): IO[List[CuteguardEvent]] =
+  def list(user: DiscordUser, giver: Option[DiscordUser], action: Option[Action]): IO[List[CuteguardEvent]] =
     (for
-      receiver <- users.find(user.discordID.equalDiscordID)
-      issuer   <- giver.traverse(giver => users.find(giver.discordID.equalDiscordID))
+      receiver <- users.findByDiscordID(user.discordID)
+      issuer   <- giver.traverse(giver => users.findByDiscordID(giver.discordID))
       events   <- OptionT.liftF(
                     list(
                       fr"receiver_user_id = ${receiver.id}".some,
                       issuer.map(issuer => fr"issuer_user_id = ${issuer.id}"),
-                      fr"action = $action".some,
+                      action.map(action => fr"action = $action"),
                     ),
                   )
     yield events).value.map(_.toList.flatten)

@@ -15,7 +15,7 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
   override val isUserCommand: Boolean                                                  = true
   override val fullCommand: String                                                     = "total"
   override val options: List[PatternOption]                                            = List(
-    _.addOption[String]("action", "Text action you want the total for.", true),
+    _.addOption[Option[String]]("action", "Text action you want the total for.", true),
     _.addOption[Option[User]]("user", "Total for whom, defaults to you."),
     _.addOption[Option[User]]("giver", "Get total for actions given by this user."),
   )
@@ -24,15 +24,24 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
   )
 
   override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
-    val action = event.getOption[String]("action")
+    val action = event.getOption[Option[String]]("action")
     val user   = event.getOption[Option[User]]("user").getOrElse(event.author)
     val giver  = event.getOption[Option[User]]("giver")
 
     for
-      events   <- events.list(user, giver, Action.valueOf(action))
-      total     = events.map(_.amount).sum
-      giverText = giver.fold("")(giver => s" given by ${giver.mention}")
-      _        <- event.replyEphemeral(s"${user.mention} has a total of $total $action$giverText.")
+      events   <- events.list(user, giver, action.map(Action.valueOf))
+      giverText = giver.fold(".")(giver => s" given by ${giver.mention}.")
+      start     = s"${user.mention} has a total of "
+      text      = events
+                    .groupBy(_.action)
+                    .view
+                    .mapValues(_.map(_.amount).sum)
+                    .toList
+                    .map { case (action, total) =>
+                      s"$total ${if total == 1 then action.show else action.plural}"
+                    }
+                    .mkString(start, ", ", giverText)
+      _        <- event.replyEphemeral(text)
     yield true
 
   override val description: String = "Get the totals of the given action."

@@ -108,7 +108,7 @@ object Cuteguard extends IOApp.Simple:
       guild          = EitherT.liftF(discordDeferred.get).flatMap(_.guildByID(config.guildID))
       counterChannel = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.counterChannelID)).value.rethrow
 
-      users  = Users(guild)
+      users <- Users(guild)
       events = Events(users)
 
       cooldown       <- Cooldown(config.cooldown, events)
