@@ -7,6 +7,8 @@ import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
 
 import cats.effect.IO
 import cats.syntax.applicative.*
+import cats.syntax.option.*
+import cats.syntax.traverse.*
 import org.typelevel.log4cats.Logger
 
 case class Total(events: Events) extends SlashCommand with Options with AutoCompleteString:
@@ -20,28 +22,36 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
     _.addOption[Option[User]]("giver", "Get total for actions given by this user."),
   )
   override val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[String]]] = Map(
-    "action" -> (_ => Action.values.toList.map(_.toString).pure),
+    "action" -> (_ => Action.values.toList.map(_.show).pure),
   )
 
   override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
-    val action = event.getOption[Option[String]]("action")
+    val action = event
+      .getOption[Option[String]]("action")
+      .traverse(Action.fromString)
     val user   = event.getOption[Option[User]]("user").getOrElse(event.author)
     val giver  = event.getOption[Option[User]]("giver")
 
-    for
-      events   <- events.list(user, giver, action.map(Action.valueOf))
-      giverText = giver.fold(".")(giver => s" given by ${giver.mention}.")
-      start     = s"${user.mention} has a total of "
-      text      = events
-                    .groupBy(_.action)
-                    .view
-                    .mapValues(_.map(_.amount).sum)
-                    .toList
-                    .map { case (action, total) =>
-                      s"$total ${if total == 1 then action.show else action.plural}"
-                    }
-                    .mkString(start, ", ", giverText)
-      _        <- event.replyEphemeral(text)
-    yield true
+    action
+      .fold(
+        event.replyEphemeral,
+        action =>
+          for
+            events   <- events.list(user.some, giver, action)
+            giverText = giver.fold(".")(giver => s" given by ${giver.mention}.")
+            start     = s"${user.mention} has a total of "
+            text      = events
+                          .groupBy(_.action)
+                          .view
+                          .mapValues(_.map(_.amount).sum)
+                          .toList
+                          .map { case (action, total) =>
+                            s"$total ${if total == 1 then action.show else action.plural}"
+                          }
+                          .mkString(start, ", ", giverText)
+            _        <- event.reply(text)
+          yield (),
+      )
+      .as(true)
 
-  override val description: String = "Get the totals of the given action."
+  override val description: String = "Get the totals of the given action for you or the given user."

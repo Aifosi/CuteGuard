@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.{Guild as JDAGuild, User as JDAUser}
 import net.dv8tion.jda.api.interactions.commands.Command as JDACommand
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
 
+import scala.compiletime.asMatchable
 import scala.jdk.CollectionConverters.*
 
 class Guild(private[model] val guild: JDAGuild):
@@ -40,3 +41,11 @@ class Guild(private[model] val guild: JDAGuild):
       .map(_.asScala.toList.map(command => DiscordID(command.getIdLong)))
 
   def commands: IO[List[JDACommand]] = guild.retrieveCommands().toIO.map(_.asScala.toList)
+
+  override def equals(other: Any): Boolean = other.asMatchable match
+    case that: Guild => discordID == that.discordID
+    case _           => false
+
+  override def hashCode(): Int =
+    val state = Seq(discordID)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)

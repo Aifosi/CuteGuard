@@ -9,4 +9,5 @@ abstract class GenericTextEvent(
   jdaMember: Option[JDAMember],
   jdaGuild: Option[JDAGuild],
 ) extends Event(jdaChannel, jdaAuthor, jdaMember, jdaGuild):
+  // TODO reuse defenition from member
   lazy val authorName: String = jdaMember.flatMap(m => Option(m.getEffectiveName)).getOrElse(author.accountName)

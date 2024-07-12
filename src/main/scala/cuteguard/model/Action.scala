@@ -24,3 +24,7 @@ object Action:
   given Get[Action] = Get[String].temap(action => Try(Action.valueOf(action)).toEither.left.map(_.getMessage))
 
   given Put[Action] = Put[String].tcontramap(_.toString)
+
+  def fromString(string: String): Either[String, Action] =
+    Try(Action.valueOf(string.split(" ").map(_.capitalize).mkString)).toOption
+      .toRight(s"Invalid Action `$string` please use one of ${Action.values.map(_.show).mkString(", ")}.")

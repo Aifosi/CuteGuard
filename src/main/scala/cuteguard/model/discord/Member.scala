@@ -5,11 +5,13 @@ import cuteguard.syntax.action.*
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.Member as JDAMember
 
+import scala.compiletime.asMatchable
 import scala.jdk.CollectionConverters.*
 
 open class Member(private[model] val member: JDAMember) extends User(member.getUser):
-  lazy val guild: Guild = new Guild(member.getGuild)
+  lazy val nameInGuild: String = Option(member.getEffectiveName).getOrElse(accountName)
 
+  lazy val guild: Guild      = new Guild(member.getGuild)
   lazy val guildName: String = member.getEffectiveName
 
   def isSelfMuted: Boolean = member.getVoiceState.isSelfMuted
@@ -31,3 +33,12 @@ open class Member(private[model] val member: JDAMember) extends User(member.getU
   def removeRole(role: Role): IO[Unit] = member.getGuild.removeRoleFromMember(member, role.role).toIO.void
 
   def isGuildOwner: Boolean = DiscordID(member.getGuild.getOwnerIdLong) == discordID
+
+  override def equals(other: Any): Boolean = other.asMatchable match
+    case that: Member => discordID == that.discordID && guild == that.guild
+    case that: User   => discordID == that.discordID
+    case _            => false
+
+  override def hashCode(): Int =
+    val state = Seq(discordID, guild.discordID)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)

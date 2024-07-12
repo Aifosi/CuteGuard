@@ -8,7 +8,6 @@ import cuteguard.utils.Maybe
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import cats.instances.option.*
-import cats.syntax.option.*
 import cats.syntax.traverse.*
 import doobie.{Fragment, Transactor}
 import doobie.postgres.implicits.*
@@ -53,13 +52,13 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       event    <- insertOne((receiver.id, issuer.map(_.id), action, amount))(columns*)
     yield event
 
-  def list(user: DiscordUser, giver: Option[DiscordUser], action: Option[Action]): IO[List[CuteguardEvent]] =
+  def list(user: Option[DiscordUser], giver: Option[DiscordUser], action: Option[Action]): IO[List[CuteguardEvent]] =
     (for
-      receiver <- users.findByDiscordID(user.discordID)
+      receiver <- user.traverse(user => users.findByDiscordID(user.discordID))
       issuer   <- giver.traverse(giver => users.findByDiscordID(giver.discordID))
       events   <- OptionT.liftF(
                     list(
-                      fr"receiver_user_id = ${receiver.id}".some,
+                      receiver.map(receiver => fr"receiver_user_id = ${receiver.id}"),
                       issuer.map(issuer => fr"issuer_user_id = ${issuer.id}"),
                       action.map(action => fr"action = $action"),
                     ),

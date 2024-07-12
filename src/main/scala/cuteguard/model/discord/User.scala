@@ -42,12 +42,8 @@ open class User(private[model] val user: JDAUser):
 
   override lazy val toString: String = s"$accountName($discordID)"
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[User]
-
   override def equals(other: Any): Boolean = other.asMatchable match
-    case that: User =>
-      that.canEqual(this) &&
-      discordID == that.discordID
+    case that: User => discordID == that.discordID
     case _          => false
 
   override def hashCode(): Int =
