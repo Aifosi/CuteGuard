@@ -10,14 +10,12 @@ import net.dv8tion.jda.api.entities.User as JDAUser
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-import java.net.URL
 import scala.compiletime.asMatchable
 
 open class User(private[model] val user: JDAUser):
   lazy val discordID: DiscordID = user.getIdLong
   lazy val mention: String      = user.getAsMention // s"<@!$discordID>"
   lazy val accountName: String  = user.getName
-  lazy val avatarURL: URL       = new URL(user.getAvatarUrl)
   lazy val isBot: Boolean       = user.isBot
 
   lazy val privateChannel: IO[PrivateChannel] = user.openPrivateChannel.toIO.map(new PrivateChannel(_))

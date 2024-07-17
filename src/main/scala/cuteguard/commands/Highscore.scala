@@ -26,12 +26,17 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
     "action" -> (_ => Action.values.toList.map(_.show).pure),
   )
 
+  extension (int: Int)
+    def padWithThousandsSeparator(max: Int): String =
+      val size = max.toString.grouped(3).mkString(" ").length
+      int.toString.grouped(3).mkString(" ").reverse.padTo(size, ' ').reverse
+
   def highscoreText(topEvents: List[((Member, Int), Int)], action: Action, author: User) =
-    val start   = s"Current highscore for **${action.show}** is:\n"
-    val topSize = topEvents.head(0)(1).toString.grouped(3).mkString(" ").size
+    val start = s"Current highscore for **${action.show}** is:\n"
     topEvents.map { case ((member, total), top) =>
-      val totalText = total.toString.grouped(3).mkString(" ").reverse.padTo(topSize, ' ').reverse
-      s"  `${top + 1}.` `$totalText` - ${if author == member then member.mention else member.guildName}"
+      val totalText = total.padWithThousandsSeparator(topEvents.head(0)(1))
+      val topText   = (top + 1).padWithThousandsSeparator(topEvents.size)
+      s"  `$topText.` `$totalText` - ${if author == member then member.mention else member.guildName}"
     }
       .mkString(start, "\n", "")
 

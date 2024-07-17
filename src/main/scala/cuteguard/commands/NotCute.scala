@@ -22,7 +22,7 @@ case class NotCute(cooldown: Cooldown) extends TextCommand with NoChannelLog:
   val e = "[e3\uD83C\uDDEA]"
 
   def notCutePattern: Regex =
-    s"$n[^a-z]*$o[^a-z]*$t\\s*[^a-z]*$a?\\s*$c[^a-z]*$u[^a-z]*$t[^a-z]*$i?[^a-z]*$e?".r
+    s"$n[^a-z]*$o[^a-z]*$t\\s*[^a-z]*$a?\\s*$c[^a-z]*$u[^a-z]*$t[^a-z]*$i?[^a-z]*$e".r
   def uncutePattern: Regex  = s"$u[^a-z]*$n[^a-z]*$c[^a-z]*$u[^a-z]*$t[^a-z]*$i?[^a-z]*$e?".r
 
   override def pattern: Regex = s"\\b($notCutePattern|$uncutePattern)\\b".r
