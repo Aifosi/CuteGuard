@@ -20,7 +20,7 @@ class Commander private (
   lazy val slashCommands: List[SlashCommand]              = commands.collect { case command: SlashCommand =>
     command
   }
-  lazy val autoCompletableCommands: List[AutoCompletable] = commands.collect { case command: AutoCompletable =>
+  lazy val autoCompletableCommands: List[AutoComplete[?]] = commands.collect { case command: AutoComplete[?] =>
     command
   }
 

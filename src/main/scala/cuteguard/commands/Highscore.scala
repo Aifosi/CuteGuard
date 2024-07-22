@@ -12,18 +12,22 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.chaining.*
 
-case class Highscore(events: Events) extends SlashCommand with Options with AutoCompleteString:
+case class Highscore(events: Events) extends SlashCommand with Options with AutoCompletePure[String]:
   /** If set to false only admins can see it by default.
     */
-  override val isUserCommand: Boolean                                                  = true
-  override val fullCommand: String                                                     = "highscore"
-  private val topDefault                                                               = 10
-  override val options: List[PatternOption]                                            = List(
-    _.addOption[String]("action", "Text action you want the total for.", true),
+  override val isUserCommand: Boolean                                              = true
+  override val fullCommand: String                                                 = "highscore"
+  private val topDefault                                                           = 10
+  override val options: List[PatternOption]                                        = List(
+    _.addOption[String]("action", "Text action you want the total for.", autoComplete = true),
     _.addOption[Option[Int]]("top", s"How many positions from the top to show. Default is $topDefault"),
+    _.addOption[Option[Int]](
+      "last_days",
+      "How many days in the past do you want highscores for. Default is the whole history",
+    ),
   )
-  override val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[String]]] = Map(
-    "action" -> (_ => Action.values.toList.map(_.show).pure),
+  override val autoCompleteOptions: Map[String, AutoCompleteEvent => List[String]] = Map(
+    "action" -> (_ => Action.values.toList.map(_.show)),
   )
 
   extension (int: Int)
