@@ -2,8 +2,8 @@ package cuteguard.commands
 
 import cuteguard.db.Events
 import cuteguard.model.Action
-import cuteguard.model.discord.{Member, User}
-import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
+import cuteguard.model.discord.Member
+import cuteguard.model.discord.event.SlashCommandEvent
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
@@ -36,9 +36,8 @@ case class Highscore(events: Events)
       val size = max.toString.grouped(3).mkString(" ").length
       int.toString.grouped(3).mkString(" ").reverse.padTo(size, ' ').reverse
 
-  def highscoreText(topEvents: List[((Member, Int), Int)], action: Action, author: User, lastDays: Option[Int]) =
-    val days  = lastDays.fold("")(lastDays => s" for the last $lastDays")
-    val start = s"Current highscore for **${action.show}**$days is:\n"
+  def highscoreText(topEvents: List[((Member, Int), Int)], action: Action, daysText: String) =
+    val start = s"Current highscore for **${action.show}**$daysText is:\n"
     topEvents.map { case ((member, total), top) =>
       val totalText = total.padWithThousandsSeparator(topEvents.head(0)(1))
       val topText   = (top + 1).padWithThousandsSeparator(topEvents.size)
@@ -62,9 +61,10 @@ case class Highscore(events: Events)
                     .take(top)
                     .zipWithIndex
 
-      text = if topEvents.isEmpty then s"There are no entries for **${action.show}**."
-             else highscoreText(topEvents, action, event.author, lastDays)
-      _   <- EitherT.liftF(event.reply(text))
+      daysText = lastDays.fold("")(lastDays => s" for the last $lastDays")
+      text     = if topEvents.isEmpty then s"There are no entries for **${action.show}$daysText**."
+                 else highscoreText(topEvents, action, daysText)
+      _       <- EitherT.liftF(event.reply(text))
     yield true
 
   override val description: String = "Get the highscore for the given action."

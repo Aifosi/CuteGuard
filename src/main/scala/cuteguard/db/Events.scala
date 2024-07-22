@@ -68,7 +68,7 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
                          receiver.map(receiver => fr"receiver_user_id = ${receiver.id}"),
                          issuer.map(issuer => fr"issuer_user_id = ${issuer.id}"),
                          action.map(action => fr"action = $action"),
-                         // earliestDate.map(earliestDate => fr"updated_at::date >= $earliestDate"),
+                         earliestDate.map(earliestDate => fr"updated_at::date >= $earliestDate"),
                        ),
                      )
     yield events).value.map(_.toList.flatten)
