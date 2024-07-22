@@ -23,7 +23,7 @@ object AutoComplete:
 
 sealed trait AutoCompletable[T: Show]:
   this: SlashCommand =>
-  protected val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]]
+  protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]]
 
   def matchesAutoComplete(event: AutoCompleteEvent): Boolean =
     event.fullCommand.equalsIgnoreCase(fullCommand)
@@ -40,14 +40,15 @@ trait AutoComplete[T: Show] extends AutoCompletable[T]:
   this: SlashCommand =>
   val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[T]]]
 
-  override protected val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] = autoCompleteOptions
+  override protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
+    autoCompleteOptions
 
 trait AutoCompleteSimple[T: Show] extends AutoCompletable[T]:
   this: SlashCommand =>
 
   val autoCompleteOptions: Map[String, IO[List[T]]]
 
-  override protected val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
+  override protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
     autoCompleteOptions.view.mapValues(value => (_: AutoCompleteEvent) => value).toMap
 
 trait AutoCompletePure[T: Show] extends AutoCompletable[T]:
@@ -55,7 +56,7 @@ trait AutoCompletePure[T: Show] extends AutoCompletable[T]:
 
   val autoCompleteOptions: Map[String, AutoCompleteEvent => List[T]]
 
-  override protected val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
+  override protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
     autoCompleteOptions.view.mapValues(_.andThen(IO.pure)).toMap
 
 trait AutoCompleteSimplePure[T: Show] extends AutoCompletable[T]:
@@ -63,5 +64,5 @@ trait AutoCompleteSimplePure[T: Show] extends AutoCompletable[T]:
 
   val autoCompleteOptions: Map[String, List[T]]
 
-  override protected val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
+  override protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
     autoCompleteOptions.view.mapValues(value => (_: AutoCompleteEvent) => IO.pure(value)).toMap

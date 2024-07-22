@@ -1,9 +1,11 @@
 package cuteguard.model.discord
 
+import cuteguard.mapping.{OptionReader, OptionWritter}
 import cuteguard.model.discord.*
 import cuteguard.syntax.action.*
 import cuteguard.syntax.io.*
 
+import cats.Show
 import cats.data.OptionT
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.User as JDAUser
@@ -47,3 +49,9 @@ open class User(private[model] val user: JDAUser):
   override def hashCode(): Int =
     val state = Seq(discordID)
     state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+
+object User:
+  given Show[User] = Show.fromToString
+
+  given OptionReader[User]  = OptionReader.shouldNeverBeUsed("User")
+  given OptionWritter[User] = OptionWritter.shouldNeverBeUsed("User")

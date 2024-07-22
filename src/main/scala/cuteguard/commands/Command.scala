@@ -3,6 +3,7 @@ package cuteguard.commands
 import cuteguard.Named
 import cuteguard.model.discord.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
 
+import cats.data.EitherT
 import cats.effect.IO
 import org.typelevel.log4cats.Logger
 
@@ -55,3 +56,11 @@ abstract class SlashCommand extends Command[SlashPattern, SlashCommandEvent]:
 
   override def matches(event: SlashCommandEvent): Boolean =
     event.fullCommand.equalsIgnoreCase(fullCommand)
+
+trait ErrorMessages:
+  this: SlashCommand =>
+
+  def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean]
+
+  override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
+    run(pattern, event).leftSemiflatMap(event.replyEphemeral(_).as(true)).merge

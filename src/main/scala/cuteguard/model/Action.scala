@@ -1,5 +1,7 @@
 package cuteguard.model
 
+import cuteguard.mapping.{OptionReader, OptionWritter}
+
 import doobie.{Get, Put}
 
 import scala.util.Try
@@ -28,3 +30,7 @@ object Action:
   def fromString(string: String): Either[String, Action] =
     Try(Action.valueOf(string.split(" ").map(_.capitalize).mkString)).toOption
       .toRight(s"Invalid Action `$string` please use one of ${Action.values.map(_.show).mkString(", ")}.")
+
+  given OptionReader[Action] = OptionReader[String].emap(fromString)
+
+  given OptionWritter[Action] = OptionWritter[String].contramap(_.show)

@@ -1,17 +1,22 @@
 package cuteguard.commands
 
+import cuteguard.mapping.{OptionReader, OptionResult}
 import cuteguard.model.discord.{Channel, Role, User}
 import cuteguard.syntax.action.*
 
+import cats.Show
 import cats.effect.IO
+import cats.instances.option.*
+import cats.syntax.either.*
+import cats.syntax.show.*
+import cats.syntax.traverse.*
 import net.dv8tion.jda.api.events.interaction.command.{
   CommandAutoCompleteInteractionEvent,
   SlashCommandInteractionEvent,
 }
-import net.dv8tion.jda.api.interactions.commands.{OptionMapping, OptionType}
+import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.{SlashCommandData, SubcommandData}
 
-import scala.compiletime.*
 import scala.quoted.*
 
 object MacroHelper:
@@ -32,17 +37,18 @@ object MacroHelper:
       case '[Option[User]]    => '{ partial(OptionType.USER, false) }
       case '[Option[Role]]    => '{ partial(OptionType.ROLE, false) }
       case '[Option[Channel]] => '{ partial(OptionType.CHANNEL, false) }
-      // case '[Option[Mentionable]] => '{ partial(OptionType.MENTIONABLE, false) }
-      case '[Int]             => '{ partial(OptionType.INTEGER, true) }
-      case '[Long]            => '{ partial(OptionType.INTEGER, true) }
-      case '[Double]          => '{ partial(OptionType.NUMBER, true) }
-      case '[String]          => '{ partial(OptionType.STRING, true) }
-      case '[Boolean]         => '{ partial(OptionType.BOOLEAN, true) }
-      case '[User]            => '{ partial(OptionType.USER, true) }
-      case '[Role]            => '{ partial(OptionType.ROLE, true) }
-      case '[Channel]         => '{ partial(OptionType.CHANNEL, true) }
-      // case '[Mentionable] => '{ partial(OptionType.MENTIONABLE, true) }
-      case _                  => '{ error("Options of given type not supported") }
+
+      case '[Int]     => '{ partial(OptionType.INTEGER, true) }
+      case '[Long]    => '{ partial(OptionType.INTEGER, true) }
+      case '[Double]  => '{ partial(OptionType.NUMBER, true) }
+      case '[String]  => '{ partial(OptionType.STRING, true) }
+      case '[Boolean] => '{ partial(OptionType.BOOLEAN, true) }
+      case '[User]    => '{ partial(OptionType.USER, true) }
+      case '[Role]    => '{ partial(OptionType.ROLE, true) }
+      case '[Channel] => '{ partial(OptionType.CHANNEL, true) }
+
+      case '[Option[?]] => '{ partial(OptionType.STRING, false) }
+      case _            => '{ partial(OptionType.STRING, true) }
     }
 
   inline def addOption[T] = ${ matchT[T] }
@@ -65,80 +71,133 @@ object MacroHelper:
       case '[Option[User]]    => '{ subCommandPartial(OptionType.USER, false) }
       case '[Option[Role]]    => '{ subCommandPartial(OptionType.ROLE, false) }
       case '[Option[Channel]] => '{ subCommandPartial(OptionType.CHANNEL, false) }
-      // case '[Option[Mentionable]] => '{ subCommandPartial(OptionType.MENTIONABLE, false) }
-      case '[Int]             => '{ subCommandPartial(OptionType.INTEGER, true) }
-      case '[Long]            => '{ subCommandPartial(OptionType.INTEGER, true) }
-      case '[Double]          => '{ subCommandPartial(OptionType.NUMBER, true) }
-      case '[String]          => '{ subCommandPartial(OptionType.STRING, true) }
-      case '[Boolean]         => '{ subCommandPartial(OptionType.BOOLEAN, true) }
-      case '[User]            => '{ subCommandPartial(OptionType.USER, true) }
-      case '[Role]            => '{ subCommandPartial(OptionType.ROLE, true) }
-      case '[Channel]         => '{ subCommandPartial(OptionType.CHANNEL, true) }
-      // case '[Mentionable] => '{ subCommandPartial(OptionType.MENTIONABLE, true) }
-      case _                  => '{ error("Options of given type not supported") }
+
+      case '[Int]     => '{ subCommandPartial(OptionType.INTEGER, true) }
+      case '[Long]    => '{ subCommandPartial(OptionType.INTEGER, true) }
+      case '[Double]  => '{ subCommandPartial(OptionType.NUMBER, true) }
+      case '[String]  => '{ subCommandPartial(OptionType.STRING, true) }
+      case '[Boolean] => '{ subCommandPartial(OptionType.BOOLEAN, true) }
+      case '[User]    => '{ subCommandPartial(OptionType.USER, true) }
+      case '[Role]    => '{ subCommandPartial(OptionType.ROLE, true) }
+      case '[Channel] => '{ subCommandPartial(OptionType.CHANNEL, true) }
+
+      case '[Option[?]] => '{ subCommandPartial(OptionType.STRING, false) }
+      case _            => '{ subCommandPartial(OptionType.STRING, true) }
     }
 
   inline def addSubCommandOption[T] = ${ subCommandMatchT[T] }
 
-  private def getT[T](f: OptionMapping => T)(event: SlashCommandInteractionEvent, option: String): T               =
-    f(event.getOption(option))
-  private def getOptionT[T](f: OptionMapping => T)(event: SlashCommandInteractionEvent, option: String): Option[T] =
-    Option(event.getOption(option)).map(f)
-
-  private def fetchOption[T: Type](using Quotes): Expr[(SlashCommandInteractionEvent, String) => T] =
-    // val a: (SlashCommandInteractionEvent, String) => User = getT[User](_.getAsUser)
+  private def fetchOption[T: Type](using
+    Quotes,
+  ): Expr[(OptionReader[T], SlashCommandInteractionEvent, String) => OptionResult[T]] =
     Type.of[T] match {
-      case '[Option[Int]]     => '{ getOptionT[Int](_.getAsLong.toInt)(_, _).asInstanceOf[T] }
-      case '[Option[Long]]    => '{ getOptionT[Long](_.getAsLong)(_, _).asInstanceOf[T] }
-      case '[Option[Double]]  => '{ getOptionT[Double](_.getAsDouble)(_, _).asInstanceOf[T] }
-      case '[Option[String]]  => '{ getOptionT[String](_.getAsString)(_, _).asInstanceOf[T] }
-      case '[Option[Boolean]] => '{ getOptionT[Boolean](_.getAsBoolean)(_, _).asInstanceOf[T] }
-      case '[Option[User]]    => '{ getOptionT[User](mapping => new User(mapping.getAsUser))(_, _).asInstanceOf[T] }
-      case '[Option[Role]]    => '{ getOptionT[Role](mapping => new Role(mapping.getAsRole))(_, _).asInstanceOf[T] }
-      case '[Option[Channel]] =>
-        '{
-          getOptionT[Channel](mapping => new Channel(mapping.getAsChannel.asGuildMessageChannel))(_, _).asInstanceOf[T]
+      case '[Option[Int]]     =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option)).map(_.getAsLong.toInt).asInstanceOf[T].asRight
         }
-      // case '[Option[Mentionable]] => '{ getOptionT[Mentionable](_.getAsMentionable)(_, _).asInstanceOf[T] }
-      case '[Int]             => '{ getT[Int](_.getAsLong.toInt)(_, _).asInstanceOf[T] }
-      case '[Long]            => '{ getT[Long](_.getAsLong)(_, _).asInstanceOf[T] }
-      case '[Double]          => '{ getT[Double](_.getAsDouble)(_, _).asInstanceOf[T] }
-      case '[String]          => '{ getT[String](_.getAsString)(_, _).asInstanceOf[T] }
-      case '[Boolean]         => '{ getT[Boolean](_.getAsBoolean)(_, _).asInstanceOf[T] }
-      case '[User]            => '{ getT[User](mapping => new User(mapping.getAsUser))(_, _).asInstanceOf[T] }
-      case '[Role]            => '{ getT[Role](mapping => new Role(mapping.getAsRole))(_, _).asInstanceOf[T] }
+      case '[Option[Long]]    =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option)).map(_.getAsLong).asInstanceOf[T].asRight
+        }
+      case '[Option[Double]]  =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option)).map(_.getAsDouble).asInstanceOf[T].asRight
+        }
+      case '[Option[String]]  =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option)).map(_.getAsString).asInstanceOf[T].asRight
+        }
+      case '[Option[Boolean]] =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option)).map(_.getAsBoolean).asInstanceOf[T].asRight
+        }
+      case '[Option[User]]    =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option)).map(mapping => new User(mapping.getAsUser)).asInstanceOf[T].asRight
+        }
+      case '[Option[Role]]    =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option)).map(mapping => new Role(mapping.getAsRole)).asInstanceOf[T].asRight
+        }
+      case '[Option[Channel]] =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          Option(event.getOption(option))
+            .map(mapping => new Channel(mapping.getAsChannel.asGuildMessageChannel))
+            .asInstanceOf[T]
+            .asRight
+        }
+      case '[Int]             =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          event.getOption(option).getAsLong.toInt.asInstanceOf[T].asRight
+        }
+      case '[Long]            =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          event.getOption(option).getAsLong.asInstanceOf[T].asRight
+        }
+      case '[Double]          =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          event.getOption(option).getAsDouble.asInstanceOf[T].asRight
+        }
+      case '[String]          =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          event.getOption(option).getAsString.asInstanceOf[T].asRight
+        }
+      case '[Boolean]         =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          event.getOption(option).getAsBoolean.asInstanceOf[T].asRight
+        }
+      case '[User]            =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          new User(event.getOption(option).getAsUser).asInstanceOf[T].asRight
+        }
+      case '[Role]            =>
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          new Role(event.getOption(option).getAsRole).asInstanceOf[T].asRight
+        }
       case '[Channel]         =>
-        '{ getT[Channel](mapping => new Channel(mapping.getAsChannel.asGuildMessageChannel))(_, _).asInstanceOf[T] }
-      // case '[Mentionable] => '{ getT[Mentionable](_.getAsMentionable)(_, _).asInstanceOf[T] }
-      case _                  => '{ error("Options of given type not supported") }
+        '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          new Channel(event.getOption(option).getAsChannel.asGuildMessageChannel)
+            .asInstanceOf[T]
+            .asRight
+        }
+
+      case '[Option[?]] =>
+        '{ (reader: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          println("option")
+          Option(event.getOption(option))
+            .flatTraverse(mapping => reader(mapping.getAsString).asInstanceOf[OptionResult[Option[T]]])
+            .map(_.asInstanceOf[T])
+        }
+      case _            =>
+        '{ (reader: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
+          println("ID")
+          reader(event.getOption(option).getAsString)
+        }
     }
 
   inline def getOption[T] = ${ fetchOption[T] }
 
-  private def replyOptions[T: Type](using Quotes): Expr[(CommandAutoCompleteInteractionEvent, List[T]) => IO[Unit]] =
+  private def replyOptions[T: Type](using
+    Quotes,
+  ): Expr[(Show[T], CommandAutoCompleteInteractionEvent, List[T]) => IO[Unit]] =
     Type.of[T] match {
-      /*case '[Option[Int]] => '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) => event.replyChoiceLongs(options.asJava).toIO.void }
-      case '[Option[Long]] => '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) => event.replyChoiceLongs(options.asJava).toIO.void }
-      case '[Option[Double]] => '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) => event.replyChoiceDoubles(options.asJava).toIO.void }
-      case '[Option[String]] => '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) => event.replyChoiceStrings(options.asJava).toIO.void }*/
-      // case '[Int] => '{ makeReplyInt(_, _) }
       case '[Int]    =>
-        '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
+        '{ (_: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
           event.replyChoiceLongs(options.asInstanceOf[List[Int]].map(_.toLong)*).toIO.void
         }
       case '[Long]   =>
-        '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
+        '{ (_: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
           event.replyChoiceLongs(options.asInstanceOf[List[Long]]*).toIO.void
         }
       case '[Double] =>
-        '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
+        '{ (_: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
           event.replyChoiceDoubles(options.asInstanceOf[List[Double]]*).toIO.void
         }
-      case '[String] =>
-        '{ (event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
-          event.replyChoiceStrings(options.asInstanceOf[List[String]]*).toIO.void
+      case _         => // String and others, using show
+        '{ (show: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
+          given Show[T] = show
+          event.replyChoiceStrings(options.map(_.show)*).toIO.void
         }
-      case _         => '{ error("Options of given type not supported") }
     }
 
   inline def replyChoices[T] = ${ replyOptions[T] }

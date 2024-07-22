@@ -14,6 +14,7 @@ import doobie.postgres.implicits.*
 import doobie.syntax.SqlInterpolator.SingleFragment
 import doobie.syntax.string.*
 
+import java.time.LocalDate
 import java.util.UUID
 case class Event(
   id: UUID,
@@ -52,15 +53,22 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       event    <- insertOne((receiver.id, issuer.map(_.id), action, amount))(columns*)
     yield event
 
-  def list(user: Option[DiscordUser], giver: Option[DiscordUser], action: Option[Action]): IO[List[CuteguardEvent]] =
+  def list(
+    user: Option[DiscordUser],
+    giver: Option[DiscordUser],
+    action: Option[Action],
+    lastDays: Option[Int],
+  ): IO[List[CuteguardEvent]] =
     (for
-      receiver <- user.traverse(user => users.findByDiscordID(user.discordID))
-      issuer   <- giver.traverse(giver => users.findByDiscordID(giver.discordID))
-      events   <- OptionT.liftF(
-                    list(
-                      receiver.map(receiver => fr"receiver_user_id = ${receiver.id}"),
-                      issuer.map(issuer => fr"issuer_user_id = ${issuer.id}"),
-                      action.map(action => fr"action = $action"),
-                    ),
-                  )
+      receiver    <- user.traverse(user => users.findByDiscordID(user.discordID))
+      issuer      <- giver.traverse(giver => users.findByDiscordID(giver.discordID))
+      earliestDate = lastDays.map(_.toLong).map(LocalDate.now.minusDays)
+      events      <- OptionT.liftF(
+                       list(
+                         receiver.map(receiver => fr"receiver_user_id = ${receiver.id}"),
+                         issuer.map(issuer => fr"issuer_user_id = ${issuer.id}"),
+                         action.map(action => fr"action = $action"),
+                         // earliestDate.map(earliestDate => fr"updated_at::date >= $earliestDate"),
+                       ),
+                     )
     yield events).value.map(_.toList.flatten)

@@ -2,6 +2,7 @@ package cuteguard.model.discord.event
 
 import cuteguard.commands.MacroHelper
 
+import cats.Show
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.{Guild as JDAGuild, Member as JDAMember, User as JDAUser}
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
@@ -14,13 +15,14 @@ class AutoCompleteEvent(
   jdaGuild: Option[JDAGuild],
   underlying: CommandAutoCompleteInteractionEvent,
 ) extends Event(jdaChannel, jdaAuthor, jdaMember, jdaGuild):
-  def focusedOption: String                              = underlying.getFocusedOption.getName
-  def focusedValue: String                               = underlying.getFocusedOption.getValue
-  inline def replyChoices[T](options: List[T]): IO[Unit] = MacroHelper.replyChoices[T](underlying, options)
-  lazy val commandName: String                           = underlying.getName
-  lazy val subCommandGroupName: Option[String]           = Option(underlying.getSubcommandGroup)
-  lazy val subCommandName: Option[String]                = Option(underlying.getSubcommandName)
-  lazy val fullCommand: String                           = List(Some(commandName), subCommandGroupName, subCommandName).flatten.mkString(" ")
+  def focusedOption: String                                                   = underlying.getFocusedOption.getName
+  def focusedValue: String                                                    = underlying.getFocusedOption.getValue
+  inline def replyChoices[T](options: List[T])(using show: Show[T]): IO[Unit] =
+    MacroHelper.replyChoices[T](show, underlying, options)
+  lazy val commandName: String                                                = underlying.getName
+  lazy val subCommandGroupName: Option[String]                                = Option(underlying.getSubcommandGroup)
+  lazy val subCommandName: Option[String]                                     = Option(underlying.getSubcommandName)
+  lazy val fullCommand: String                                                = List(Some(commandName), subCommandGroupName, subCommandName).flatten.mkString(" ")
 
 object AutoCompleteEvent {
   given Conversion[CommandAutoCompleteInteractionEvent, AutoCompleteEvent] = event =>

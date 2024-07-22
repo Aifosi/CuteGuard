@@ -4,11 +4,15 @@ import cuteguard.db.Events
 import cuteguard.model.Action
 import cuteguard.model.discord.{Channel, User}
 import cuteguard.model.discord.event.SlashCommandEvent
+import cuteguard.syntax.eithert.*
+import cuteguard.utils.toEitherT
 
+import cats.data.EitherT
 import cats.effect.IO
 import org.typelevel.log4cats.Logger
 
-case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Action) extends SlashCommand with Options:
+case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Action)
+    extends SlashCommand with Options with ErrorMessages:
   /** If set to false only admins can see it by default.
     */
   override val isUserCommand: Boolean       = true
@@ -20,23 +24,19 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
   override val description: String          =
     s"Records a number of ${action.plural} you did, optionally add who gave them to you."
 
-  override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
-    val amount = event.getOption[Int]("amount")
-    val giver  = event.getOption[Option[User]]("giver")
-
-    counterChanned.flatMap {
-      case counterChanned if event.channel.discordID != counterChanned.discordID =>
-        event.replyEphemeral(s"This command can only be used in ${counterChanned.mention}.")
-      case _ if amount <= 0                                                      =>
-        event.replyEphemeral("Amount must be greater than 0.")
-      case _ if giver.contains(event.author)                                     =>
-        event.replyEphemeral(s"You cannot give yourself ${action.plural}.")
-      case _                                                                     =>
-        for
-          _         <- events.add(event.author, giver, action, amount)
-          actionText = if amount == 1 then action.show else action.plural
-          givenBy    = giver.fold("")(giver => s" given by ${giver.mention}")
-          _         <-
-            event.reply(s"${event.author.mention} just did $amount $actionText$givenBy.")
-        yield ()
-    }.as(true)
+  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
+    for
+      counterChanned <- EitherT.liftF(counterChanned)
+      _              <-
+        EitherT
+          .leftWhen(event.channel != counterChanned, s"This command can only be used in ${counterChanned.mention}.")
+      amount         <- event.getOption[Int]("amount").toEitherT
+      _              <- EitherT.leftWhen(amount <= 0, "Amount must be greater than 0.")
+      giver          <- event.getOption[Option[User]]("giver").toEitherT
+      _              <- EitherT.leftWhen(giver.contains(event.author), s"You cannot give yourself ${action.plural}.")
+      _              <- EitherT.liftF(events.add(event.author, giver, action, amount))
+      actionText      = if amount == 1 then action.show else action.plural
+      givenBy         = giver.fold("")(giver => s" given by ${giver.mention}")
+      _              <-
+        EitherT.liftF(event.reply(s"${event.author.mention} just did $amount $actionText$givenBy."))
+    yield true

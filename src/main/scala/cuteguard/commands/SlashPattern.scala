@@ -1,5 +1,7 @@
 package cuteguard.commands
 
+import cuteguard.mapping.OptionWritter
+
 import cats.syntax.option.*
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 import net.dv8tion.jda.api.interactions.commands.build.{Commands, SlashCommandData, SubcommandData, SubcommandGroupData}
@@ -13,7 +15,11 @@ case class SlashPattern(
   commandOptions: List[SlashCommandData => SlashCommandData] = List.empty,
   subCommandOptions: List[SubcommandData => SubcommandData] = List.empty,
 ):
-  inline def addOption[T](name: String, description: String, autoComplete: Boolean = false): SlashPattern =
+  inline def addOption[T: OptionWritter](
+    name: String,
+    description: String,
+    autoComplete: Boolean = false,
+  ): SlashPattern =
     subCommand.fold {
       val option: SlashCommandData => SlashCommandData = MacroHelper.addOption[T](_, name, description, autoComplete)
       copy(commandOptions = commandOptions :+ option)

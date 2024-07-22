@@ -1,6 +1,7 @@
 package cuteguard.model.discord.event
 
 import cuteguard.commands.MacroHelper
+import cuteguard.mapping.{OptionReader, OptionResult}
 import cuteguard.model.discord.Message
 import cuteguard.syntax.action.*
 
@@ -44,11 +45,14 @@ class SlashCommandEvent(
   jdaGuild: Option[JDAGuild],
   underlying: SlashCommandInteractionEvent,
 ) extends GenericTextEvent(jdaChannel, jdaAuthor, jdaMember, jdaGuild) with SlashAPI:
-  def deferReply(ephemeral: Boolean = false): IO[Unit]                                                          = underlying.deferReply(ephemeral).toIO.void
-  override def reply(string: String): IO[Message]                                                               =
+  def deferReply(ephemeral: Boolean = false): IO[Unit] = underlying.deferReply(ephemeral).toIO.void
+
+  override def reply(string: String): IO[Message] =
     underlying.reply(string).toIO.flatMap(_.retrieveOriginal.toIO).map(Message(_))
-  override def replyEphemeral(string: String): IO[Option[Message]]                                              =
+
+  override def replyEphemeral(string: String): IO[Option[Message]] =
     underlying.reply(string).setEphemeral(true).toIO.as(None)
+
   override def replyImage(image: BufferedImage, title: String, ephemeral: Boolean = false): IO[Option[Message]] =
     val outputStream = new ByteArrayOutputStream()
     ImageIO.write(image, "png", outputStream)
@@ -61,13 +65,16 @@ class SlashCommandEvent(
         case interactionHook if ephemeral => IO.pure(None)
         case interactionHook              => interactionHook.retrieveOriginal.toIO.map(Message(_).some)
       }
-  inline def getOption[T](option: String): T                                                                    = MacroHelper.getOption[T](underlying, option)
-  lazy val allOptions: List[OptionMapping]                                                                      = underlying.getOptions.asScala.toList
-  lazy val commandName: String                                                                                  = underlying.getName
-  lazy val subCommandGroupName: Option[String]                                                                  = Option(underlying.getSubcommandGroup)
-  lazy val subCommandName: Option[String]                                                                       = Option(underlying.getSubcommandName)
-  lazy val fullCommand: String                                                                                  = List(Some(commandName), subCommandGroupName, subCommandName).flatten.mkString(" ")
-  lazy val hook: InteractionHook                                                                                = underlying.getHook
+
+  inline def getOption[T](option: String)(using reader: OptionReader[T]): OptionResult[T] =
+    MacroHelper.getOption[T](reader, underlying, option)
+
+  lazy val allOptions: List[OptionMapping]     = underlying.getOptions.asScala.toList
+  lazy val commandName: String                 = underlying.getName
+  lazy val subCommandGroupName: Option[String] = Option(underlying.getSubcommandGroup)
+  lazy val subCommandName: Option[String]      = Option(underlying.getSubcommandName)
+  lazy val fullCommand: String                 = List(Some(commandName), subCommandGroupName, subCommandName).flatten.mkString(" ")
+  lazy val hook: InteractionHook               = underlying.getHook
 
 object SlashCommandEvent:
   given Conversion[SlashCommandInteractionEvent, SlashCommandEvent] = event =>
