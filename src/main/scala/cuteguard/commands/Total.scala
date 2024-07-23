@@ -42,7 +42,7 @@ case class Total(events: Events)
       _        <- EitherT.leftWhen(lastDays.exists(_ <= 0), "`last_days` must be greater than 0!")
       events   <- EitherT.liftF(events.list(user.some, giver, action, lastDays))
       giverText = giver.fold(".")(giver => s" given by ${giver.mention}.")
-      days      = lastDays.fold("")(lastDays => s"For the last $lastDays ")
+      days      = lastDays.fold("")(lastDays => s"For the last $lastDays ${if lastDays == 1 then "day" else "days"} ")
       start     = s"$days${user.mention} has a total of "
       text      = events
                     .groupBy(_.action)

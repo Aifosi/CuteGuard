@@ -61,7 +61,7 @@ case class Highscore(events: Events)
                     .take(top)
                     .zipWithIndex
 
-      daysText = lastDays.fold("")(lastDays => s" for the last $lastDays")
+      daysText = lastDays.fold("")(lastDays => s" for the last $lastDays ${if lastDays == 1 then "day" else "days"}")
       text     = if topEvents.isEmpty then s"There are no entries for **${action.show}$daysText**."
                  else highscoreText(topEvents, action, daysText)
       _       <- EitherT.liftF(event.reply(text))
