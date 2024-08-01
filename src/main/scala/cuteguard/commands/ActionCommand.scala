@@ -18,7 +18,7 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
   override val isUserCommand: Boolean       = true
   override val fullCommand: String          = action.show
   override val options: List[PatternOption] = List(
-    _.addOption[Int]("amount", s"How many ${action.plural} did you do?"),
+    _.addOption[Option[Int]]("amount", s"How many ${action.plural} did you do? Defaults to 1."),
     _.addOption[Option[User]]("giver", s"Who gave you these ${action.plural}."),
   )
   override val description: String          =
@@ -30,7 +30,7 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
       _              <-
         EitherT
           .leftWhen(event.channel != counterChanned, s"This command can only be used in ${counterChanned.mention}.")
-      amount         <- event.getOption[Int]("amount").toEitherT
+      amount         <- event.getOption[Option[Int]]("amount").toEitherT.map(_.getOrElse(1))
       _              <- EitherT.leftWhen(amount <= 0, "Amount must be greater than 0.")
       giver          <- event.getOption[Option[User]]("giver").toEitherT
       _              <- EitherT.leftWhen(giver.contains(event.author), s"You cannot give yourself ${action.plural}.")

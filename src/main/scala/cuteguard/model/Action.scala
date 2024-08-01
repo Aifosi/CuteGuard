@@ -14,6 +14,7 @@ enum Action(pluralTransformer: String => String):
   case Subsmash extends Action(_ + "es")
   case NotCute  extends Action(_ + "s")
   case Pleading extends Action(_ + "s")
+  case Spank    extends Action(_ + "s")
 
   lazy val show: String   = toString.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase
   lazy val plural: String = pluralTransformer(show)
