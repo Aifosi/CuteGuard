@@ -3,6 +3,7 @@ package cuteguard.db
 import cuteguard.db.Filters.*
 import cuteguard.model.{Action, Event as CuteguardEvent}
 import cuteguard.model.discord.User as DiscordUser
+import cuteguard.syntax.localdate.*
 import cuteguard.utils.Maybe
 
 import cats.data.{EitherT, OptionT}
@@ -14,7 +15,7 @@ import doobie.postgres.implicits.*
 import doobie.syntax.SqlInterpolator.SingleFragment
 import doobie.syntax.string.*
 
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 import java.util.UUID
 case class Event(
   id: UUID,
@@ -22,6 +23,7 @@ case class Event(
   issuerUserId: Option[UUID],
   action: Action,
   amount: Int,
+  date: Instant,
 )
 
 class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, CuteguardEvent]:
@@ -32,6 +34,7 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
     "issuer_user_id",
     "action",
     "amount",
+    "date",
   )
 
   override def toModel(event: Event): Maybe[CuteguardEvent] =
@@ -44,13 +47,21 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       issuer,
       event.action,
       event.amount,
+      event.date,
     )
 
-  def add(user: DiscordUser, giver: Option[DiscordUser], action: Action, amount: Int): IO[CuteguardEvent] =
+  def add(
+    user: DiscordUser,
+    giver: Option[DiscordUser],
+    action: Action,
+    amount: Int,
+    date: Option[LocalDate],
+  ): IO[CuteguardEvent] =
     for
       receiver <- users.add(user)
       issuer   <- giver.traverse(users.add)
-      event    <- insertOne((receiver.id, issuer.map(_.id), action, amount))(columns*)
+      instant   = date.fold(Instant.now)(_.atStartOfDayUTC)
+      event    <- insertOne((receiver.id, issuer.map(_.id), action, amount, instant))(columns*)
     yield event
 
   def list(
@@ -62,13 +73,13 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
     (for
       receiver    <- user.traverse(user => users.findByDiscordID(user.discordID))
       issuer      <- giver.traverse(giver => users.findByDiscordID(giver.discordID))
-      earliestDate = lastDays.map(_.toLong).map(LocalDate.now.minusDays)
+      earliestDate = lastDays.map(_.toLong).map(LocalDate.now.minusDays).map(_.atStartOfDayUTC)
       events      <- OptionT.liftF(
                        list(
                          receiver.map(receiver => fr"receiver_user_id = ${receiver.id}"),
                          issuer.map(issuer => fr"issuer_user_id = ${issuer.id}"),
                          action.map(action => fr"action = $action"),
-                         earliestDate.map(earliestDate => fr"updated_at::date >= $earliestDate"),
+                         earliestDate.map(earliestDate => fr"date >= $earliestDate"),
                        ),
                      )
     yield events).value.map(_.toList.flatten)
