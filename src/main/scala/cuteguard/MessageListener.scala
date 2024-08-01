@@ -92,7 +92,7 @@ class MessageListener(
   override def onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent): Unit =
     commander.autoCompletableCommands
       .foldLeft(IO.unit) {
-        case (io, command) if command.matchesAutoComplete(event) => command.apply(event)
+        case (io, command) if command.matchesAutoComplete(event) => io *> command.apply(event)
         case (io, _)                                             => io
       }
       .void

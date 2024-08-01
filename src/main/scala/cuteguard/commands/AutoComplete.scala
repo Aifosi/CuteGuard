@@ -1,12 +1,11 @@
 package cuteguard.commands
 
+import cuteguard.mapping.OptionWritter
 import cuteguard.model.discord.event.AutoCompleteEvent
-import cuteguard.utils.startsWithIgnoreCase
 
-import cats.Show
 import cats.effect.IO
 import cats.syntax.applicative.*
-import cats.syntax.show.*
+import compiletime.asMatchable
 
 import java.util.concurrent.TimeUnit
 
@@ -21,29 +20,29 @@ object AutoComplete:
 
   lazy val timeUnit: AutoCompleteOption = "unit" -> (_ => timeUnits.keys.toList.pure)
 
-sealed trait AutoCompletable[T: Show]:
+trait AutoCompletable[T: OptionWritter]:
   this: SlashCommand =>
   protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]]
+
+  val reply: (OptionWritter[T], AutoCompleteEvent, List[T]) => IO[Unit]
 
   def matchesAutoComplete(event: AutoCompleteEvent): Boolean =
     event.fullCommand.equalsIgnoreCase(fullCommand)
 
-  protected def focusedOptions(event: AutoCompleteEvent): IO[List[T]] =
+  protected inline def focusedOptions(event: AutoCompleteEvent): IO[List[T]] =
     autoCompleteableOptions.get(event.focusedOption).fold(IO.pure(List.empty))(_(event))
 
-  def apply(event: AutoCompleteEvent): IO[Unit] =
-    focusedOptions(event).flatMap { autoCompleteableOptions =>
-      event.replyChoices[String](autoCompleteableOptions.map(_.show).filter(_.startsWithIgnoreCase(event.focusedValue)))
-    }
+  inline def apply(event: AutoCompleteEvent): IO[Unit] =
+    focusedOptions(event).flatMap(reply(summon[OptionWritter[T]], event.underlying, _))
 
-trait AutoComplete[T: Show] extends AutoCompletable[T]:
+trait AutoComplete[T: OptionWritter] extends AutoCompletable[T]:
   this: SlashCommand =>
   val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[T]]]
 
   override protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
     autoCompleteOptions
 
-trait AutoCompleteSimple[T: Show] extends AutoCompletable[T]:
+trait AutoCompleteSimple[T: OptionWritter] extends AutoCompletable[T]:
   this: SlashCommand =>
 
   val autoCompleteOptions: Map[String, IO[List[T]]]
@@ -51,7 +50,7 @@ trait AutoCompleteSimple[T: Show] extends AutoCompletable[T]:
   override protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
     autoCompleteOptions.view.mapValues(value => (_: AutoCompleteEvent) => value).toMap
 
-trait AutoCompletePure[T: Show] extends AutoCompletable[T]:
+trait AutoCompletePure[T: OptionWritter] extends AutoCompletable[T]:
   this: SlashCommand =>
 
   val autoCompleteOptions: Map[String, AutoCompleteEvent => List[T]]
@@ -59,7 +58,7 @@ trait AutoCompletePure[T: Show] extends AutoCompletable[T]:
   override protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]] =
     autoCompleteOptions.view.mapValues(_.andThen(IO.pure)).toMap
 
-trait AutoCompleteSimplePure[T: Show] extends AutoCompletable[T]:
+trait AutoCompleteSimplePure[T: OptionWritter] extends AutoCompletable[T]:
   this: SlashCommand =>
 
   val autoCompleteOptions: Map[String, List[T]]

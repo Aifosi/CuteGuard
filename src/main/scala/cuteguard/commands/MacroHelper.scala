@@ -1,19 +1,16 @@
 package cuteguard.commands
 
-import cuteguard.mapping.{OptionReader, OptionResult}
+import cuteguard.mapping.{OptionReader, OptionResult, OptionWritter}
 import cuteguard.model.discord.{Channel, Role, User}
+import cuteguard.model.discord.event.AutoCompleteEvent
 import cuteguard.syntax.action.*
+import cuteguard.syntax.string.*
 
-import cats.Show
 import cats.effect.IO
 import cats.instances.option.*
 import cats.syntax.either.*
-import cats.syntax.show.*
 import cats.syntax.traverse.*
-import net.dv8tion.jda.api.events.interaction.command.{
-  CommandAutoCompleteInteractionEvent,
-  SlashCommandInteractionEvent,
-}
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.{SlashCommandData, SubcommandData}
 
@@ -28,7 +25,7 @@ object MacroHelper:
     data.addOption(optionType, name, description, required, autoComplete)
 
   private def matchT[T: Type](using Quotes): Expr[(SlashCommandData, String, String, Boolean) => SlashCommandData] =
-    Type.of[T] match {
+    Type.of[T] match
       case '[Option[Int]]     => '{ partial(OptionType.INTEGER, false) }
       case '[Option[Long]]    => '{ partial(OptionType.INTEGER, false) }
       case '[Option[Double]]  => '{ partial(OptionType.NUMBER, false) }
@@ -49,7 +46,6 @@ object MacroHelper:
 
       case '[Option[?]] => '{ partial(OptionType.STRING, false) }
       case _            => '{ partial(OptionType.STRING, true) }
-    }
 
   inline def addOption[T] = ${ matchT[T] }
 
@@ -62,7 +58,7 @@ object MacroHelper:
   private def subCommandMatchT[T: Type](using
     Quotes,
   ): Expr[(SubcommandData, String, String, Boolean) => SubcommandData] =
-    Type.of[T] match {
+    Type.of[T] match
       case '[Option[Int]]     => '{ subCommandPartial(OptionType.INTEGER, false) }
       case '[Option[Long]]    => '{ subCommandPartial(OptionType.INTEGER, false) }
       case '[Option[Double]]  => '{ subCommandPartial(OptionType.NUMBER, false) }
@@ -83,14 +79,13 @@ object MacroHelper:
 
       case '[Option[?]] => '{ subCommandPartial(OptionType.STRING, false) }
       case _            => '{ subCommandPartial(OptionType.STRING, true) }
-    }
 
   inline def addSubCommandOption[T] = ${ subCommandMatchT[T] }
 
   private def fetchOption[T: Type](using
     Quotes,
   ): Expr[(OptionReader[T], SlashCommandInteractionEvent, String) => OptionResult[T]] =
-    Type.of[T] match {
+    Type.of[T] match
       case '[Option[Int]]     =>
         '{ (_: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
           Option(event.getOption(option)).map(_.getAsLong.toInt).asInstanceOf[T].asRight
@@ -173,31 +168,51 @@ object MacroHelper:
           println("ID")
           reader(event.getOption(option).getAsString)
         }
-    }
 
   inline def getOption[T] = ${ fetchOption[T] }
 
-  private def replyOptions[T: Type](using
-    Quotes,
-  ): Expr[(Show[T], CommandAutoCompleteInteractionEvent, List[T]) => IO[Unit]] =
-    Type.of[T] match {
+  private def filteredOptions[T](writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]): List[T] =
+    options.flatMap { option =>
+      Option.when(writter(option).startsWithIgnoreCase(event.focusedValue))(option)
+    }
+
+  private def replyOptions[T: Type](using Quotes): Expr[(OptionWritter[T], AutoCompleteEvent, List[T]) => IO[Unit]] =
+    Type.of[T] match
       case '[Int]    =>
-        '{ (_: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
-          event.replyChoiceLongs(options.asInstanceOf[List[Int]].map(_.toLong)*).toIO.void
+        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
+          println("int")
+          event.underlying
+            .replyChoiceLongs(filteredOptions(writter, event, options).asInstanceOf[List[Int]].map(_.toLong)*)
+            .toIO
+            .void
         }
       case '[Long]   =>
-        '{ (_: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
-          event.replyChoiceLongs(options.asInstanceOf[List[Long]]*).toIO.void
+        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
+          println("long")
+          event.underlying
+            .replyChoiceLongs(filteredOptions(writter, event, options).asInstanceOf[List[Long]]*)
+            .toIO
+            .void
         }
       case '[Double] =>
-        '{ (_: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
-          event.replyChoiceDoubles(options.asInstanceOf[List[Double]]*).toIO.void
+        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
+          println("double")
+          event.underlying
+            .replyChoiceDoubles(filteredOptions(writter, event, options).asInstanceOf[List[Double]]*)
+            .toIO
+            .void
+        }
+      case '[String] =>
+        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
+          println("String")
+          val filteredOptions = options.map(writter.apply).filter(_.startsWithIgnoreCase(event.focusedValue))
+          event.underlying.replyChoiceStrings(filteredOptions*).toIO.void
         }
       case _         => // String and others, using show
-        '{ (show: Show[T], event: CommandAutoCompleteInteractionEvent, options: List[T]) =>
-          given Show[T] = show
-          event.replyChoiceStrings(options.map(_.show)*).toIO.void
+        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
+          println("other")
+          val filteredOptions = options.map(writter.apply).filter(_.startsWithIgnoreCase(event.focusedValue))
+          event.underlying.replyChoiceStrings(filteredOptions*).toIO.void
         }
-    }
 
   inline def replyChoices[T] = ${ replyOptions[T] }

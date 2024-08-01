@@ -3,16 +3,23 @@ package cuteguard.commands
 import cuteguard.db.Events
 import cuteguard.model.Action
 import cuteguard.model.discord.{Channel, User}
-import cuteguard.model.discord.event.SlashCommandEvent
+import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
-
 import cats.data.EitherT
 import cats.effect.IO
+import cats.syntax.option.*
+import cuteguard.mapping.OptionWritter
+import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
+import java.time.{LocalDate, YearMonth}
+
 case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Action)
-    extends SlashCommand with Options with ErrorMessages:
+    extends SlashCommand with Options with ErrorMessages with AutoCompletePure[Int]:
+  override val description: String =
+    s"Records a number of ${action.plural} you did, optionally add who gave them to you."
+
   /** If set to false only admins can see it by default.
     */
   override val isUserCommand: Boolean       = true
@@ -20,9 +27,54 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
   override val options: List[PatternOption] = List(
     _.addOption[Option[Int]]("amount", s"How many ${action.plural} did you do? Defaults to 1."),
     _.addOption[Option[User]]("giver", s"Who gave you these ${action.plural}."),
+    _.addOption[Option[Int]](
+      "year",
+      "The year you did it, if not today. Defaults to current year.",
+      autoComplete = true,
+    ),
+    _.addOption[Option[Int]](
+      "month",
+      "The month you did it, if not today. Defaults to current month.",
+      autoComplete = true,
+    ),
+    _.addOption[Option[Int]]("day", "The day you did it, if not today. Defaults to current day.", autoComplete = true),
   )
-  override val description: String          =
-    s"Records a number of ${action.plural} you did, optionally add who gave them to you."
+
+  extension (event: AutoCompleteEvent)
+    private def getOption(name: String): Option[Int] = event.options.collectFirst {
+      case option if option.getName.equalsIgnoreCase(name) => option.getAsInt
+    }
+    private def getDaysForMonth: List[Int]           =
+      val now  = LocalDate.now
+      val year = event.getOption("year").getOrElse(now.getYear)
+      event.getOption("month").fold(List.range(1, now.getDayOfMonth).takeRight(25)) { month =>
+        val monthLength = YearMonth.of(year, month).lengthOfMonth
+        List.range(1, monthLength + 1).take(25)
+      }
+
+  override val autoCompleteOptions: Map[String, AutoCompleteEvent => List[Int]] = Map(
+    "year"  -> (_ => List.range(2023, LocalDate.now.getYear)),
+    "month" -> (_ => List.range(1, 12)),
+    "day"   -> (_.getDaysForMonth),
+  )
+  override val reply: (OptionWritter[Int], AutoCompleteEvent, List[Int]) => IO[Unit] = MacroHelper.replyChoices[Int]
+
+  private def getDate(event: SlashCommandEvent): Either[String, Option[LocalDate]] =
+    for
+      year  <- event.getOption[Option[Int]]("year")
+      month <- event.getOption[Option[Int]]("month")
+      day   <- event.getOption[Option[Int]]("day")
+    yield (year, month, day) match
+      case (None, None, None) => None
+      case (year, month, day) =>
+        val now = LocalDate.now
+        LocalDate
+          .of(
+            year.getOrElse(now.getYear),
+            month.getOrElse(now.getMonthValue),
+            day.getOrElse(now.getDayOfMonth),
+          )
+          .some
 
   override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
     for
@@ -32,9 +84,11 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
           .leftWhen(event.channel != counterChanned, s"This command can only be used in ${counterChanned.mention}.")
       amount         <- event.getOption[Option[Int]]("amount").toEitherT.map(_.getOrElse(1))
       _              <- EitherT.leftWhen(amount <= 0, "Amount must be greater than 0.")
+      date           <- getDate(event).toEitherT
+      _              <- EitherT.leftWhen(date.exists(_.isAfter(LocalDate.now)), s"Cannot add ${action.plural} in the future!")
       giver          <- event.getOption[Option[User]]("giver").toEitherT
       _              <- EitherT.leftWhen(giver.contains(event.author), s"You cannot give yourself ${action.plural}.")
-      _              <- EitherT.liftF(events.add(event.author, giver, action, amount))
+      _              <- EitherT.liftF(events.add(event.author, giver, action, amount, date))
       actionText      = if amount == 1 then action.show else action.plural
       givenBy         = giver.fold("")(giver => s" given by ${giver.mention}")
       _              <-

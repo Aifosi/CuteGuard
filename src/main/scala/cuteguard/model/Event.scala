@@ -2,6 +2,7 @@ package cuteguard.model
 
 import cuteguard.model.discord.Member
 
+import java.time.Instant
 import java.util.UUID
 
 case class Event(
@@ -10,4 +11,5 @@ case class Event(
   issuer: Option[Option[Member]],
   action: Action,
   amount: Int,
+  date: Instant,
 )

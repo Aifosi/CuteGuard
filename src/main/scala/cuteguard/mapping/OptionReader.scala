@@ -1,7 +1,7 @@
 package cuteguard.mapping
 
 type OptionResult[T] = Either[String, T]
-trait OptionReader[+T]:
+trait OptionReader[T]:
   def apply(string: String): OptionResult[T]
 
   def map[TT](f: T => TT): OptionReader[TT]                  = string => apply(string).map(f)
@@ -11,7 +11,7 @@ trait OptionReader[+T]:
 object OptionReader:
   def apply[T](using reader: OptionReader[T]) = reader
 
-  def shouldNeverBeUsed(what: String): OptionReader[Nothing] = _ =>
+  def shouldNeverBeUsed[T](what: String): OptionReader[T] = _ =>
     throw new Exception(s"Option Reader for $what is trying to be used!")
 
   private def error(string: String, t: String) = s"Unable to read $string as $t"
