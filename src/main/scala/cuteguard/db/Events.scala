@@ -36,8 +36,8 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
 
   override def toModel(event: Event): Maybe[CuteguardEvent] =
     for
-      receiver <- EitherT.liftF(users.getByID(event.receiverUserId))
-      issuer   <- EitherT.liftF(event.issuerUserId.traverse(users.getByID))
+      receiver <- EitherT.liftF(users.findByID(event.receiverUserId).value)
+      issuer   <- EitherT.liftF(event.issuerUserId.traverse(users.findByID).value)
     yield CuteguardEvent(
       event.id,
       receiver,

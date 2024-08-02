@@ -6,8 +6,8 @@ import java.util.UUID
 
 case class Event(
   id: UUID,
-  receiver: Member,
-  issuer: Option[Member],
+  receiver: Option[Member],
+  issuer: Option[Option[Member]],
   action: Action,
   amount: Int,
 )
