@@ -1,6 +1,6 @@
 package cuteguard.model
 
-import cuteguard.mapping.{OptionReader, OptionWritter}
+import cuteguard.mapping.{OptionReader, OptionWriter}
 
 import doobie.{Get, Put}
 
@@ -34,4 +34,4 @@ object Action:
 
   given OptionReader[Action] = OptionReader[String].emap(fromString)
 
-  given OptionWritter[Action] = OptionWritter[String].contramap(_.show)
+  given OptionWriter[Action] = OptionWriter[String].contramap(_.show)

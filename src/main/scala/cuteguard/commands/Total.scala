@@ -1,10 +1,11 @@
 package cuteguard.commands
 
+import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
-import cuteguard.mapping.OptionWritter
+import cuteguard.mapping.OptionWriter
 import cuteguard.model.Action
 import cuteguard.model.discord.User
-import cuteguard.model.discord.event.SlashCommandEvent
+import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
@@ -14,13 +15,12 @@ import cats.syntax.option.*
 import cats.syntax.traverse.*
 import org.typelevel.log4cats.Logger
 
-case class Total(events: Events)
-    extends SlashCommand with Options with AutoCompleteSimplePure[String] with ErrorMessages:
+case class Total(events: Events) extends SlashCommand with Options with AutoComplete[Action] with ErrorMessages:
   /** If set to false only admins can see it by default.
     */
-  override val isUserCommand: Boolean                         = true
-  override val fullCommand: String                            = "total"
-  override val options: List[PatternOption]                   = List(
+  override val isUserCommand: Boolean                                                  = true
+  override val fullCommand: String                                                     = "total"
+  override val options: List[PatternOption]                                            = List(
     _.addOption[Option[Action]]("action", "Text action you want the total for.", autoComplete = true),
     _.addOption[Option[User]]("user", "Total for whom, defaults to you."),
     _.addOption[Option[User]]("giver", "Get total for actions given by this user."),
@@ -29,9 +29,9 @@ case class Total(events: Events)
       "How many days in the past do you want highscores for. Default is the whole history",
     ),
   )
-  override val autoCompleteOptions: Map[String, List[String]] = Map(
-    "action" -> Action.values.toList.map(_.show),
-  )
+  override val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[Action]]] = Map(
+    "action" -> Action.values.toList,
+  ).fromSimplePure
 
   override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
     for

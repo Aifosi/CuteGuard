@@ -1,6 +1,6 @@
 package cuteguard.model.discord
 
-import cuteguard.mapping.{OptionReader, OptionWritter}
+import cuteguard.mapping.{OptionReader, OptionWriter}
 import cuteguard.syntax.action.*
 import cuteguard.syntax.io.*
 
@@ -52,5 +52,5 @@ class Channel(channel: MessageChannel):
 object Channel:
   given Show[Channel] = Show.fromToString
 
-  given OptionReader[Channel]  = OptionReader.shouldNeverBeUsed("Channel")
-  given OptionWritter[Channel] = OptionWritter.shouldNeverBeUsed("Channel")
+  given OptionReader[Channel] = OptionReader.shouldNeverBeUsed("Channel")
+  given OptionWriter[Channel] = OptionWriter.shouldNeverBeUsed("Channel")

@@ -11,16 +11,16 @@ import org.typelevel.log4cats.Logger
 class Commander private (
   commands: List[AnyCommand],
 )(using Logger[IO]):
-  lazy val textCommands: List[TextCommand]                              = commands.collect { case command: TextCommand =>
+  lazy val textCommands: List[TextCommand]                   = commands.collect { case command: TextCommand =>
     command
   }
-  lazy val reactionCommands: List[ReactionCommand]                      = commands.collect { case command: ReactionCommand =>
+  lazy val reactionCommands: List[ReactionCommand]           = commands.collect { case command: ReactionCommand =>
     command
   }
-  lazy val slashCommands: List[SlashCommand]                            = commands.collect { case command: SlashCommand =>
+  lazy val slashCommands: List[SlashCommand]                 = commands.collect { case command: SlashCommand =>
     command
   }
-  lazy val autoCompletableCommands: List[AutoCompletable[?]]            = commands.collect { case command: AutoCompletable[?] =>
+  lazy val autoCompletableCommands: List[AutoCompletable[?]] = commands.collect { case command: AutoCompletable[?] =>
     command
   }
 

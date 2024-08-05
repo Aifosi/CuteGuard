@@ -1,6 +1,6 @@
 package cuteguard.model.discord
 
-import cuteguard.mapping.{OptionReader, OptionWritter}
+import cuteguard.mapping.{OptionReader, OptionWriter}
 import cuteguard.model.discord.*
 import cuteguard.syntax.action.*
 import cuteguard.syntax.io.*
@@ -53,5 +53,5 @@ open class User(private[model] val user: JDAUser):
 object User:
   given Show[User] = Show.fromToString
 
-  given OptionReader[User]  = OptionReader.shouldNeverBeUsed("User")
-  given OptionWritter[User] = OptionWritter.shouldNeverBeUsed("User")
+  given OptionReader[User] = OptionReader.shouldNeverBeUsed("User")
+  given OptionWriter[User] = OptionWriter.shouldNeverBeUsed("User")

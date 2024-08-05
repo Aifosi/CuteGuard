@@ -1,7 +1,9 @@
 package cuteguard.commands
 
+import cuteguard.commands.ActionCommand.dateTimeFormatter
+import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
-import cuteguard.mapping.OptionWritter
+import cuteguard.mapping.OptionWriter
 import cuteguard.model.Action
 import cuteguard.model.discord.{Channel, User}
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
@@ -15,9 +17,10 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
 import java.time.{LocalDate, YearMonth}
+import java.time.format.DateTimeFormatter
 
 case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Action)
-    extends SlashCommand with Options with ErrorMessages with AutoCompletePure[Int]:
+    extends SlashCommand with Options with ErrorMessages with AutoCompleteInt:
   override val description: String =
     s"Records a number of ${action.plural} you did, optionally add who gave them to you."
 
@@ -46,18 +49,18 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
       case option if option.getName.equalsIgnoreCase(name) => option.getAsInt
     }
     private def getDaysForMonth: List[Int]           =
-      val now  = LocalDate.now
-      val year = event.getOption("year").getOrElse(now.getYear)
-      event.getOption("month").fold(List.range(1, now.getDayOfMonth).takeRight(25)) { month =>
-        val monthLength = YearMonth.of(year, month).lengthOfMonth
-        List.range(1, monthLength + 1).take(25)
-      }
+      val now   = LocalDate.now
+      val year  = event.getOption("year").getOrElse(now.getYear)
+      val month = event.getOption("month").getOrElse(now.getMonthValue)
+      if year == now.getYear && month == now.getMonthValue then List.range(1, now.getDayOfMonth + 1)
+      else List.range(1, YearMonth.of(year, month).lengthOfMonth + 1)
 
-  override val autoCompleteOptions: Map[String, AutoCompleteEvent => List[Int]] = Map(
-    "year"  -> (_ => List.range(2023, LocalDate.now.getYear)),
-    "month" -> (_ => List.range(1, 12)),
-    "day"   -> (_.getDaysForMonth),
-  )
+  override val autoCompleteInts: Map[String, AutoCompleteEvent => IO[List[Int]]] =
+    Map[String, AutoCompleteEvent => List[Int]](
+      "year"  -> (_ => List.range(2023, LocalDate.now.getYear + 1)),
+      "month" -> (_ => List.range(1, 12 + 1)),
+      "day"   -> (_.getDaysForMonth),
+    ).fromPure
 
   private def getDate(event: SlashCommandEvent): Either[String, Option[LocalDate]] =
     for
@@ -91,6 +94,12 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
       _              <- EitherT.liftF(events.add(event.author, giver, action, amount, date))
       actionText      = if amount == 1 then action.show else action.plural
       givenBy         = giver.fold("")(giver => s" given by ${giver.mention}")
+      message         = date.fold(s"${event.author.mention} just did $amount $actionText$givenBy.") { date =>
+                          s"${event.author.mention} just added $amount $actionText$givenBy done on ${date.format(dateTimeFormatter)}."
+                        }
       _              <-
-        EitherT.liftF(event.reply(s"${event.author.mention} just did $amount $actionText$givenBy."))
+        EitherT.liftF(event.reply(message))
     yield true
+
+object ActionCommand:
+  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
