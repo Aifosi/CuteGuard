@@ -1,12 +1,8 @@
 package cuteguard.commands
 
-import cuteguard.mapping.{OptionReader, OptionResult, OptionWritter}
+import cuteguard.mapping.{OptionReader, OptionResult}
 import cuteguard.model.discord.{Channel, Role, User}
-import cuteguard.model.discord.event.AutoCompleteEvent
-import cuteguard.syntax.action.*
-import cuteguard.syntax.string.*
 
-import cats.effect.IO
 import cats.instances.option.*
 import cats.syntax.either.*
 import cats.syntax.traverse.*
@@ -170,49 +166,3 @@ object MacroHelper:
         }
 
   inline def getOption[T] = ${ fetchOption[T] }
-
-  private def filteredOptions[T](writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]): List[T] =
-    options.flatMap { option =>
-      Option.when(writter(option).startsWithIgnoreCase(event.focusedValue))(option)
-    }
-
-  private def replyOptions[T: Type](using Quotes): Expr[(OptionWritter[T], AutoCompleteEvent, List[T]) => IO[Unit]] =
-    Type.of[T] match
-      case '[Int]    =>
-        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
-          println("int")
-          event.underlying
-            .replyChoiceLongs(filteredOptions(writter, event, options).asInstanceOf[List[Int]].map(_.toLong)*)
-            .toIO
-            .void
-        }
-      case '[Long]   =>
-        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
-          println("long")
-          event.underlying
-            .replyChoiceLongs(filteredOptions(writter, event, options).asInstanceOf[List[Long]]*)
-            .toIO
-            .void
-        }
-      case '[Double] =>
-        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
-          println("double")
-          event.underlying
-            .replyChoiceDoubles(filteredOptions(writter, event, options).asInstanceOf[List[Double]]*)
-            .toIO
-            .void
-        }
-      case '[String] =>
-        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
-          println("String")
-          val filteredOptions = options.map(writter.apply).filter(_.startsWithIgnoreCase(event.focusedValue))
-          event.underlying.replyChoiceStrings(filteredOptions*).toIO.void
-        }
-      case _         => // String and others, using show
-        '{ (writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]) =>
-          println("other")
-          val filteredOptions = options.map(writter.apply).filter(_.startsWithIgnoreCase(event.focusedValue))
-          event.underlying.replyChoiceStrings(filteredOptions*).toIO.void
-        }
-
-  inline def replyChoices[T] = ${ replyOptions[T] }

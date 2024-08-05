@@ -1,7 +1,8 @@
 package cuteguard.model.discord.event
 
-import cuteguard.commands.MacroHelper
 import cuteguard.mapping.OptionWritter
+import cuteguard.syntax.action.*
+import cuteguard.syntax.string.*
 
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.{Guild as JDAGuild, Member as JDAMember, User as JDAUser}
@@ -9,6 +10,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 
+import scala.compiletime.{asMatchable, erasedValue}
 import scala.jdk.CollectionConverters.*
 
 class AutoCompleteEvent(
@@ -22,8 +24,27 @@ class AutoCompleteEvent(
   def focusedValue: String         = underlying.getFocusedOption.getValue
   def options: List[OptionMapping] = underlying.getOptions.asScala.toList
 
-  inline def replyChoices[T](options: List[T])(using writter: OptionWritter[T]): IO[Unit] =
-    MacroHelper.replyChoices[T](writter, underlying, options)
+  def filteredOptions[T](options: List[T])(using writter: OptionWritter[T]): List[T] =
+    options.flatMap { option =>
+      Option.when(writter(option).startsWithIgnoreCase(focusedValue))(option)
+    }
+
+  transparent inline def replyChoices[T: OptionWritter](options: List[T]): IO[Unit] =
+    inline erasedValue[T] match
+      case _: Int    =>
+        println("Int")
+        underlying.replyChoiceLongs(filteredOptions(options).asInstanceOf[List[Int]].map(_.toLong)*).toIO.void
+      case _: Long   =>
+        println("Long")
+        underlying.replyChoiceLongs(filteredOptions(options).asInstanceOf[List[Long]]*).toIO.void
+      case _: Double =>
+        println("Double")
+        underlying.replyChoiceDoubles(filteredOptions(options).asInstanceOf[List[Double]]*).toIO.void
+      case _         =>
+        println("Other")
+        val filteredOptions =
+          options.map(summon[OptionWritter[T]].apply).filter(_.startsWithIgnoreCase(focusedValue))
+        underlying.replyChoiceStrings(filteredOptions*).toIO.void
 
   lazy val commandName: String                 = underlying.getName
   lazy val subCommandGroupName: Option[String] = Option(underlying.getSubcommandGroup)

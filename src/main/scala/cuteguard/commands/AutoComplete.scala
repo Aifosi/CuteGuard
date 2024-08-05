@@ -2,12 +2,14 @@ package cuteguard.commands
 
 import cuteguard.mapping.OptionWritter
 import cuteguard.model.discord.event.AutoCompleteEvent
+import cuteguard.syntax.action.*
+import cuteguard.syntax.string.*
 
 import cats.effect.IO
 import cats.syntax.applicative.*
-import compiletime.asMatchable
 
 import java.util.concurrent.TimeUnit
+import scala.compiletime.{asMatchable, erasedValue}
 
 object AutoComplete:
   type AutoCompleteOption = (String, AutoCompleteEvent => IO[List[String]])
@@ -20,20 +22,15 @@ object AutoComplete:
 
   lazy val timeUnit: AutoCompleteOption = "unit" -> (_ => timeUnits.keys.toList.pure)
 
-trait AutoCompletable[T: OptionWritter]:
+trait AutoCompletable[T](using val writter: OptionWritter[T]):
   this: SlashCommand =>
   protected lazy val autoCompleteableOptions: Map[String, AutoCompleteEvent => IO[List[T]]]
-
-  val reply: (OptionWritter[T], AutoCompleteEvent, List[T]) => IO[Unit]
 
   def matchesAutoComplete(event: AutoCompleteEvent): Boolean =
     event.fullCommand.equalsIgnoreCase(fullCommand)
 
-  protected inline def focusedOptions(event: AutoCompleteEvent): IO[List[T]] =
+  inline def focusedOptions(event: AutoCompleteEvent): IO[List[T]] =
     autoCompleteableOptions.get(event.focusedOption).fold(IO.pure(List.empty))(_(event))
-
-  inline def apply(event: AutoCompleteEvent): IO[Unit] =
-    focusedOptions(event).flatMap(reply(summon[OptionWritter[T]], event.underlying, _))
 
 trait AutoComplete[T: OptionWritter] extends AutoCompletable[T]:
   this: SlashCommand =>
