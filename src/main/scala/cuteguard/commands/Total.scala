@@ -1,16 +1,17 @@
 package cuteguard.commands
 
 import cuteguard.db.Events
+import cuteguard.mapping.OptionWritter
 import cuteguard.model.Action
 import cuteguard.model.discord.User
-import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
+import cuteguard.model.discord.event.SlashCommandEvent
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
+
 import cats.data.EitherT
 import cats.effect.IO
 import cats.syntax.option.*
 import cats.syntax.traverse.*
-import cuteguard.mapping.OptionWritter
 import org.typelevel.log4cats.Logger
 
 case class Total(events: Events)
@@ -31,7 +32,6 @@ case class Total(events: Events)
   override val autoCompleteOptions: Map[String, List[String]] = Map(
     "action" -> Action.values.toList.map(_.show),
   )
-  override val reply: (OptionWritter[String], AutoCompleteEvent, List[String]) => IO[Unit] = MacroHelper.replyChoices[String]
 
   override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
     for

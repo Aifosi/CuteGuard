@@ -2,18 +2,13 @@ package cuteguard.mapping
 
 import cats.Show
 import cats.syntax.show.*
-import cuteguard.model.discord.event.AutoCompleteEvent
 trait OptionWritter[T]:
-  def apply(t: T, event: AutoCompleteEvent): String
+  def apply(t: T): String
 
   def contramap[TT](f: TT => T): OptionWritter[TT] = thing => apply(f(thing))
 
 object OptionWritter:
   def apply[T](using writer: OptionWritter[T]) = writer
-
-  def filteredOptions[T](writter: OptionWritter[T], event: AutoCompleteEvent, options: List[T]): List[T] = options.flatMap { option =>
-    Option.when(writter(option).startsWithIgnoreCase(event.focusedValue))(option)
-  }
 
   def shouldNeverBeUsed[T](what: String): OptionWritter[T] = _ =>
     throw new Exception(s"Option Writter for $what is trying to be used!")

@@ -1,7 +1,7 @@
 package cuteguard
 
-import cuteguard.commands.{Command, NoChannelLog}
-import cuteguard.model.discord.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
+import cuteguard.commands.{AutoCompletable, Command, NoChannelLog}
+import cuteguard.model.discord.event.{AutoCompleteEvent, Event, MessageEvent, ReactionEvent, SlashCommandEvent}
 import cuteguard.model.discord.event.MessageEvent.given
 import cuteguard.model.discord.event.ReactionEvent.given
 import cuteguard.model.discord.event.SlashCommandEvent.given
@@ -9,6 +9,8 @@ import cuteguard.syntax.io.*
 
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
+import cats.instances.list.*
+import cats.syntax.foldable.*
 import net.dv8tion.jda.api.events.interaction.command.{
   CommandAutoCompleteInteractionEvent,
   SlashCommandInteractionEvent,
@@ -89,14 +91,13 @@ class MessageListener(
       )
     }.unsafeRunAndForget()
 
-  override def onCommandAutoCompleteInteraction(event: CommandAutoCompleteInteractionEvent): Unit =
-    commander.autoCompletableCommands
-      .foldLeft(IO.unit) {
-        case (io, command) if command.matchesAutoComplete(event) => io *> command.apply(event)
-        case (io, _)                                             => io
-      }
-      .void
-      .unsafeRunAndForget()
+  override def onCommandAutoCompleteInteraction(jdaEvent: CommandAutoCompleteInteractionEvent): Unit =
+    val event          = AutoCompleteEvent(jdaEvent)
+    commander.autoCompletableCommands.transpose.collect {
+      case command if command.matchesAutoComplete(event) =>
+        command.focusedOptions(event).flatMap(event.replyChoices(_)(using command.writter))
+    }.sequence_.void.unsafeRunAndForget()
+
 
 /* override def onGuildMemberRemove(event: GuildMemberRemoveEvent): Unit =
     val io = for

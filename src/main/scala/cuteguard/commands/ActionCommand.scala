@@ -1,15 +1,16 @@
 package cuteguard.commands
 
 import cuteguard.db.Events
+import cuteguard.mapping.OptionWritter
 import cuteguard.model.Action
 import cuteguard.model.discord.{Channel, User}
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
+
 import cats.data.EitherT
 import cats.effect.IO
 import cats.syntax.option.*
-import cuteguard.mapping.OptionWritter
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
@@ -57,7 +58,6 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
     "month" -> (_ => List.range(1, 12)),
     "day"   -> (_.getDaysForMonth),
   )
-  override val reply: (OptionWritter[Int], AutoCompleteEvent, List[Int]) => IO[Unit] = MacroHelper.replyChoices[Int]
 
   private def getDate(event: SlashCommandEvent): Either[String, Option[LocalDate]] =
     for
