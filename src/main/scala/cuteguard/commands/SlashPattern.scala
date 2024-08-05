@@ -1,6 +1,6 @@
 package cuteguard.commands
 
-import cuteguard.mapping.OptionWritter
+import cuteguard.mapping.OptionWriter
 
 import cats.syntax.option.*
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
@@ -15,7 +15,7 @@ case class SlashPattern(
   commandOptions: List[SlashCommandData => SlashCommandData] = List.empty,
   subCommandOptions: List[SubcommandData => SubcommandData] = List.empty,
 ):
-  inline def addOption[T: OptionWritter](
+  inline def addOption[T: OptionWriter](
     name: String,
     description: String,
     autoComplete: Boolean = false,

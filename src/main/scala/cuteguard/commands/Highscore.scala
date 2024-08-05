@@ -1,10 +1,11 @@
 package cuteguard.commands
 
+import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
-import cuteguard.mapping.OptionWritter
+import cuteguard.mapping.OptionWriter
 import cuteguard.model.Action
 import cuteguard.model.discord.Member
-import cuteguard.model.discord.event.SlashCommandEvent
+import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
 import cuteguard.syntax.chaining.*
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
@@ -14,14 +15,13 @@ import cats.effect.IO
 import cats.syntax.option.*
 import org.typelevel.log4cats.Logger
 
-case class Highscore(events: Events)
-    extends SlashCommand with Options with AutoCompleteSimplePure[String] with ErrorMessages:
+case class Highscore(events: Events) extends SlashCommand with Options with AutoComplete[Action] with ErrorMessages:
   /** If set to false only admins can see it by default.
     */
-  override val isUserCommand: Boolean                         = true
-  override val fullCommand: String                            = "highscore"
-  private val topDefault                                      = 10
-  override val options: List[PatternOption]                   = List(
+  override val isUserCommand: Boolean                                                  = true
+  override val fullCommand: String                                                     = "highscore"
+  private val topDefault                                                               = 10
+  override val options: List[PatternOption]                                            = List(
     _.addOption[Action]("action", "Text action you want the total for.", autoComplete = true),
     _.addOption[Option[Int]]("top", s"How many positions from the top to show. Default is $topDefault, 0 shows all."),
     _.addOption[Option[Int]](
@@ -29,9 +29,9 @@ case class Highscore(events: Events)
       "How many days in the past do you want highscores for. Default is the whole history",
     ),
   )
-  override val autoCompleteOptions: Map[String, List[String]] = Map(
-    "action" -> Action.values.toList.map(_.show),
-  )
+  override val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[Action]]] = Map(
+    "action" -> Action.values.toList,
+  ).fromSimplePure
 
   extension (int: Int)
     def padWithThousandsSeparator(max: Int): String =

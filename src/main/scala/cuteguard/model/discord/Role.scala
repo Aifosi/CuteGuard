@@ -1,6 +1,6 @@
 package cuteguard.model.discord
 
-import cuteguard.mapping.{OptionReader, OptionWritter}
+import cuteguard.mapping.{OptionReader, OptionWriter}
 
 import cats.Show
 import net.dv8tion.jda.api.entities.Role as JDARole
@@ -25,5 +25,5 @@ class Role(private[model] val role: JDARole):
 object Role:
   given Show[Role] = Show.fromToString
 
-  given OptionReader[Role]  = OptionReader.shouldNeverBeUsed("Role")
-  given OptionWritter[Role] = OptionWritter.shouldNeverBeUsed("Role")
+  given OptionReader[Role] = OptionReader.shouldNeverBeUsed("Role")
+  given OptionWriter[Role] = OptionWriter.shouldNeverBeUsed("Role")

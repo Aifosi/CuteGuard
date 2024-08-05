@@ -92,12 +92,10 @@ class MessageListener(
     }.unsafeRunAndForget()
 
   override def onCommandAutoCompleteInteraction(jdaEvent: CommandAutoCompleteInteractionEvent): Unit =
-    val event          = AutoCompleteEvent(jdaEvent)
-    commander.autoCompletableCommands.transpose.collect {
-      case command if command.matchesAutoComplete(event) =>
-        command.focusedOptions(event).flatMap(event.replyChoices(_)(using command.writter))
-    }.sequence_.void.unsafeRunAndForget()
-
+    val event = AutoCompleteEvent(jdaEvent)
+    commander.autoCompletableCommands.collect {
+      case command if command.matchesAutoComplete(event) => command.apply(event)
+    }.sequence_.unsafeRunAndForget()
 
 /* override def onGuildMemberRemove(event: GuildMemberRemoveEvent): Unit =
     val io = for
