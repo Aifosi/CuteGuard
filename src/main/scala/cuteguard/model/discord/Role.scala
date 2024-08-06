@@ -8,7 +8,7 @@ import net.dv8tion.jda.api.entities.Role as JDARole
 import scala.compiletime.asMatchable
 
 class Role(private[model] val role: JDARole):
-  lazy val discordID: DiscordID = role.getIdLong
+  lazy val discordID: DiscordID = DiscordID(role.getIdLong)
   lazy val name: String         = role.getName
   lazy val mention: String      = role.getAsMention
 

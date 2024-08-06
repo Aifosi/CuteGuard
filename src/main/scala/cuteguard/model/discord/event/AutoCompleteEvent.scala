@@ -47,4 +47,3 @@ object AutoCompleteEvent:
     Option(event.getGuild),
     event,
   )
-  given Conversion[CommandAutoCompleteInteractionEvent, AutoCompleteEvent] = AutoCompleteEvent.apply

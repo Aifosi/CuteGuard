@@ -2,9 +2,6 @@ package cuteguard
 
 import cuteguard.commands.{AutoCompletable, Command, NoChannelLog}
 import cuteguard.model.discord.event.{AutoCompleteEvent, Event, MessageEvent, ReactionEvent, SlashCommandEvent}
-import cuteguard.model.discord.event.MessageEvent.given
-import cuteguard.model.discord.event.ReactionEvent.given
-import cuteguard.model.discord.event.SlashCommandEvent.given
 import cuteguard.syntax.io.*
 
 import cats.effect.IO
@@ -60,7 +57,7 @@ class MessageListener(
     yield ()
 
   override def onMessageReceived(event: MessageReceivedEvent): Unit =
-    runCommandList(event, commander.textCommands) { (event, command) =>
+    runCommandList(MessageEvent(event), commander.textCommands) { (event, command) =>
       lazy val subgroupsText =
         val subgroups = command.pattern.findFirstMatchIn(event.content).fold("")(_.subgroups.mkString(" "))
         if subgroups.isBlank then event.content else subgroups
@@ -71,12 +68,12 @@ class MessageListener(
     }.unsafeRunAndForget()
 
   override def onMessageReactionAdd(event: MessageReactionAddEvent): Unit =
-    runCommandList(event, commander.reactionCommands) { (event, command) =>
+    runCommandList(ReactionEvent(event), commander.reactionCommands) { (event, command) =>
       log(event, s" issued reaction command $command".stripTrailing, command.isInstanceOf[NoChannelLog])
     }.unsafeRunAndForget()
 
   override def onSlashCommandInteraction(event: SlashCommandInteractionEvent): Unit =
-    runCommandList(event, commander.slashCommands) { (event, command) =>
+    runCommandList(SlashCommandEvent(event), commander.slashCommands) { (event, command) =>
       val options = event.allOptions.map {
         case option
             if option.getType == OptionType.MENTIONABLE || option.getType == OptionType.USER || option.getType == OptionType.ROLE || option.getType == OptionType.CHANNEL =>

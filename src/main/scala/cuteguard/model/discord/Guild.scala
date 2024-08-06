@@ -16,8 +16,8 @@ import scala.compiletime.asMatchable
 import scala.jdk.CollectionConverters.*
 
 class Guild(private[model] val guild: JDAGuild):
-  lazy val discordID: DiscordID = guild.getIdLong
-  lazy val ownerID: DiscordID   = guild.getOwnerIdLong
+  lazy val discordID: DiscordID = DiscordID(guild.getIdLong)
+  lazy val ownerID: DiscordID   = DiscordID(guild.getOwnerIdLong)
 
   def isOwner(user: User): Boolean = user.discordID == ownerID
 

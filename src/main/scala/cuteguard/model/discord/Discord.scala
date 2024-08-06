@@ -27,7 +27,7 @@ class Discord(val jda: JDA):
   def channelByID(id: DiscordID): Maybe[Channel] =
     getter[Long](id.toLong, "channel", jda.getChannelById(classOf[MessageChannel], _), new Channel(_))
 
-  def roles(guildID: DiscordID): Maybe[List[Role]] = guildByID(guildID.toLong).map(_.roles)
+  def roles(guildID: DiscordID): Maybe[List[Role]] = guildByID(guildID).map(_.roles)
 
   def unsafeRoleByID(id: DiscordID): IO[Role] = roleByID(id).rethrowT
 

@@ -31,7 +31,7 @@ class ReactionEvent(
       .getOrRaise(new Exception(s"Message $messageID not found in channel ${channel.discordID}"))
 
 object ReactionEvent:
-  given Conversion[MessageReactionAddEvent, ReactionEvent] = event =>
+  def apply(event: MessageReactionAddEvent): ReactionEvent =
     new ReactionEvent(
       event.getReaction.getEmoji.getAsReactionCode,
       event.getChannel,

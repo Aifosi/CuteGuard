@@ -32,7 +32,7 @@ class MessageEvent(
   override def reply(embed: MessageEmbed): IO[Message] = message.reply(embed)
 
 object MessageEvent:
-  given Conversion[MessageReceivedEvent, MessageEvent] = event =>
+  def apply(event: MessageReceivedEvent): MessageEvent =
     new MessageEvent(
       event.getMessage,
       event.getChannel,

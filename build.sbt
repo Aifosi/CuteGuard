@@ -67,7 +67,6 @@ scalacOptions ++= Seq(
   "-feature",                      // Emit warning and location for usages of features that should be imported explicitly.
   "-source:future",                // better-monadic-for
   "-language:higherKinds",         // Allow higher-kinded types
-  "-language:implicitConversions", // Allow implicit conversions
   "-deprecation",                  // Emit warning and location for usages of deprecated APIs.
   "-Wunused:all",                  // Emit warnings for unused imports, local definitions, explicit parameters implicit, parameters method, parameters
   "-Xcheck-macros",

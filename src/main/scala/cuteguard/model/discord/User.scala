@@ -15,7 +15,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.compiletime.asMatchable
 
 open class User(private[model] val user: JDAUser):
-  lazy val discordID: DiscordID = user.getIdLong
+  lazy val discordID: DiscordID = DiscordID(user.getIdLong)
   lazy val mention: String      = user.getAsMention // s"<@!$discordID>"
   lazy val accountName: String  = user.getName
   lazy val isBot: Boolean       = user.isBot

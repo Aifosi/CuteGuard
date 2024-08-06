@@ -12,7 +12,7 @@ class Message(private[model] val message: JDAMessage):
   lazy val content: String         = message.getContentRaw
   lazy val contentStripped: String = message.getContentStripped
   lazy val contentDisplay: String  = message.getContentDisplay
-  lazy val id: DiscordID           = message.getIdLong
+  lazy val id: DiscordID           = DiscordID(message.getIdLong)
   lazy val jumpUrl: String         = message.getJumpUrl
 
   def addReactions(reactions: String*): IO[Unit]                 =

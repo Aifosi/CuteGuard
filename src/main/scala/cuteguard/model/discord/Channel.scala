@@ -18,7 +18,7 @@ import scala.compiletime.asMatchable
 import scala.jdk.CollectionConverters.*
 
 class Channel(channel: MessageChannel):
-  lazy val discordID: DiscordID                                   = channel.getIdLong
+  lazy val discordID: DiscordID                                   = DiscordID(channel.getIdLong)
   lazy val mention: String                                        = channel.getAsMention
   lazy val name: String                                           = channel.getName
   def sendMessage(string: String): IO[Message]                    =

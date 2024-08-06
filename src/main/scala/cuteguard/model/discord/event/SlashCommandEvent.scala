@@ -27,16 +27,16 @@ trait SlashAPI:
 class InteractionHook(
   underlying: JDAInteractionHook,
 ) extends SlashAPI:
-  override def reply(string: String): IO[Message]                                                               = underlying.sendMessage(string).toIO.map(Message(_))
-  override def replyEphemeral(string: String): IO[Option[Message]]                                              =
+  override def reply(string: String): IO[Message] =
+    underlying.sendMessage(string).toIO.map(Message(_))
+
+  override def replyEphemeral(string: String): IO[Option[Message]] =
     underlying.sendMessage(string).toIO.map(Message(_).some)
+
   override def replyImage(image: BufferedImage, title: String, ephemeral: Boolean = false): IO[Option[Message]] =
     val outputStream = new ByteArrayOutputStream()
     ImageIO.write(image, "png", outputStream)
     underlying.sendFiles(FileUpload.fromData(outputStream.toByteArray, title + ".png")).toIO.map(Message(_).some)
-
-object InteractionHook:
-  given Conversion[JDAInteractionHook, InteractionHook] = hook => new InteractionHook(hook)
 
 class SlashCommandEvent(
   jdaChannel: MessageChannel,
@@ -73,11 +73,12 @@ class SlashCommandEvent(
   lazy val commandName: String                 = underlying.getName
   lazy val subCommandGroupName: Option[String] = Option(underlying.getSubcommandGroup)
   lazy val subCommandName: Option[String]      = Option(underlying.getSubcommandName)
-  lazy val fullCommand: String                 = List(Some(commandName), subCommandGroupName, subCommandName).flatten.mkString(" ")
-  lazy val hook: InteractionHook               = underlying.getHook
+  lazy val fullCommand: String                 = List(Some(commandName), subCommandGroupName, subCommandName).flatten
+    .mkString(" ")
+  lazy val hook: InteractionHook               = new InteractionHook(underlying.getHook)
 
 object SlashCommandEvent:
-  given Conversion[SlashCommandInteractionEvent, SlashCommandEvent] = event =>
+  def apply(event: SlashCommandInteractionEvent): SlashCommandEvent =
     new SlashCommandEvent(
       event.getChannel,
       event.getUser,
