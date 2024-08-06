@@ -93,7 +93,7 @@ libraryDependencies ++= Seq(
   doobiePostgres,
 )
 
-lazy val apacheLang     = "org.apache.commons"     % "commons-lang3"              % "3.14.0"
+lazy val apacheLang     = "org.apache.commons"     % "commons-lang3"              % "3.15.0"
 lazy val catsEffect     = "org.typelevel"         %% "cats-effect"                % "3.5.0"
 lazy val circe          = "io.circe"              %% "circe-core"                 % "0.14.7"
 lazy val circeParser    = circe.organization      %% "circe-parser"               % circe.revision
