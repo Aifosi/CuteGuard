@@ -60,15 +60,16 @@ dockerBuildOptions        += "--platform=linux/amd64"
 
 javacOptions  ++= Seq("-Xlint", "-encoding", "UTF-8")
 scalacOptions ++= Seq(
-  "-explain",                      // Explain errors in more detail.
-  "-explain-types",                // Explain type errors in more detail.
-  "-indent",                       // Allow significant indentation.
-  "-new-syntax",                   // Require `then` and `do` in control expressions.
-  "-feature",                      // Emit warning and location for usages of features that should be imported explicitly.
-  "-source:future",                // better-monadic-for
-  "-language:higherKinds",         // Allow higher-kinded types
-  "-deprecation",                  // Emit warning and location for usages of deprecated APIs.
-  "-Wunused:all",                  // Emit warnings for unused imports, local definitions, explicit parameters implicit, parameters method, parameters
+  "-explain",              // Explain errors in more detail.
+  "-explain-types",        // Explain type errors in more detail.
+  "-indent",               // Allow significant indentation.
+  "-new-syntax",           // Require `then` and `do` in control expressions.
+  "-feature",              // Emit warning and location for usages of features that should be imported explicitly.
+  "-source:future",        // better-monadic-for
+  "-language:higherKinds", // Allow higher-kinded types
+  "-deprecation",          // Emit warning and location for usages of deprecated APIs.
+  "-Wunused:all",          // Emit warnings for unused imports, local definitions, explicit parameters implicit,
+  // parameters method, parameters
   "-Xcheck-macros",
 )
 
