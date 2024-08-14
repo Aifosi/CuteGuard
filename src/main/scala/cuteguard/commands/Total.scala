@@ -39,25 +39,25 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
     Logger[IO],
   ): IO[Unit] =
     val response = for
-      action   <- event.getOption[Option[Action]]("action").toEitherT
-      _         = println(action)
-      user     <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
-      giver    <- event.getOption[Option[User]]("giver").toEitherT
-      lastDays <- event.getOption[Option[Int]]("last_days").toEitherT
-      _        <- EitherT.leftWhen(lastDays.exists(_ <= 0), "`last_days` must be greater than 0!")
-      events   <- EitherT.liftF(events.list(user.some, giver, action, lastDays))
-      giverText = giver.fold(".")(giver => s" given by ${giver.mention}.")
-      days      = lastDays.fold("")(lastDays => s"For the last $lastDays ${if lastDays == 1 then "day" else "days"} ")
-      start     = s"$days${user.mention} has a total of "
-      text      = events
-                    .groupBy(_.action)
-                    .view
-                    .mapValues(_.map(_.amount).sum)
-                    .toList
-                    .map { case (action, total) =>
-                      s"$total ${if total == 1 then action.show else action.plural}"
-                    }
-                    .mkString(start, ", ", giverText)
+      action     <- event.getOption[Option[Action]]("action").toEitherT
+      user       <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
+      giver      <- event.getOption[Option[User]]("giver").toEitherT
+      lastDays   <- event.getOption[Option[Int]]("last_days").toEitherT
+      _          <- EitherT.leftWhen(lastDays.exists(_ <= 0), "`last_days` must be greater than 0!")
+      events     <- EitherT.liftF(events.list(user.some, giver, action, lastDays))
+      giverText   = giver.fold(".")(giver => s" given by ${giver.mention}.")
+      days        = lastDays.fold("")(lastDays => s"For the last $lastDays ${if lastDays == 1 then "day" else "days"} ")
+      start       = s"$days${user.mention} has a total of "
+      textByEvent = events
+                      .groupBy(_.action)
+                      .view
+                      .mapValues(_.map(_.amount).sum)
+                      .toList
+                      .map { case (action, total) =>
+                        s"$total ${if total == 1 then action.show else action.plural}"
+                      }
+      emptyText   = s"$days ${user.mention} has no ${action.fold("events")(_.plural)} on record."
+      text        = if textByEvent.isEmpty then emptyText else textByEvent.mkString(start, ", ", giverText)
     yield text
     eitherTResponse(response, slashAPI).void
 

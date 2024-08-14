@@ -154,7 +154,6 @@ object MacroHelper:
 
       case '[Option[?]] =>
         '{ (reader: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
-          println("option")
           Option(event.getOption(option))
             .flatTraverse(mapping => reader(mapping.getAsString).asInstanceOf[OptionResult[Option[T]]])
             .map(_.asInstanceOf[T])

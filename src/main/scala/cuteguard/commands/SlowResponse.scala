@@ -21,15 +21,21 @@ trait SlowResponse:
       for
         _       <- IO.sleep(2.seconds)
         replied <- repliedRef.get
-        _       <- if !replied then slashAPI.set(event.hook) *> event.deferReply(ephemeralResponses) *> repliedRef.set(true)
-                   else IO.unit
+        _       <- IO.whenA(!replied) {
+                     for
+                       _ <- slashAPI.set(event.hook)
+                       _ <- event.deferReply(ephemeralResponses)
+                       _ <- repliedRef.set(true)
+                     yield ()
+                   }
       yield ()
 
     for
       slashAPI   <- Ref.of[IO, SlashAPI](event)
       repliedRef <- Ref.of[IO, Boolean](false)
-      _          <- switchToHook(slashAPI, repliedRef).start
+      fiber      <- switchToHook(slashAPI, repliedRef).start
       _          <- slowResponse(pattern, event, slashAPI)
+      _          <- fiber.cancel
       _          <- repliedRef.set(true)
     yield true
 

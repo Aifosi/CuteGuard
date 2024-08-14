@@ -34,15 +34,16 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
   ).fromSimplePure
 
   extension (int: Int)
-    def padWithThousandsSeparator(max: Int): String =
-      val size = max.toString.grouped(3).mkString(" ").length
+    def padWithThousandsSeparator(size: Int): String =
       int.toString.grouped(3).mkString(" ").reverse.padTo(size, ' ').reverse
 
   def highscoreText(topEvents: List[((Option[Member], Int), Int)], action: Action, daysText: String) =
-    val start = s"Current highscore for **${action.show}**$daysText is:\n"
+    val start            = s"Current highscore for **${action.show}**$daysText is:\n"
+    val maxTotalTextSize = topEvents.head(0)(1).toString.grouped(3).mkString(" ").length
+    val maxTextSize      = topEvents.size.toString.grouped(3).mkString(" ").length
     topEvents.map { case ((member, total), top) =>
-      val totalText = total.padWithThousandsSeparator(topEvents.head(0)(1))
-      val topText   = (top + 1).padWithThousandsSeparator(topEvents.size)
+      val totalText = total.padWithThousandsSeparator(maxTotalTextSize)
+      val topText   = (top + 1).padWithThousandsSeparator(maxTextSize)
       s"`$topText. $totalText - ${member.fold("Member left server")(_.guildName)}`"
     }
       .mkString(start, "\n", "")
@@ -59,9 +60,9 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
       _        <- EitherT.leftWhen(lastDays.exists(_ <= 0), "`last_days` must be greater than 0!")
       events   <- EitherT.liftF(events.list(None, None, action.some, lastDays))
       topEvents = events
-                    .groupBy(_.receiver)
-                    .view
-                    .mapValues(_.map(_.amount).sum)
+                    .foldLeft(Map.empty[Option[Member], Int]) { (acc, event) =>
+                      acc + (event.receiver -> (acc.getOrElse(event.receiver, 0) + event.amount))
+                    }
                     .toList
                     .sortBy(_(1))(Ordering[Int].reverse)
                     .when(top > 0)(_.take(top))
