@@ -19,7 +19,7 @@ import org.typelevel.log4cats.Logger
 import java.time.{LocalDate, YearMonth}
 import java.time.format.DateTimeFormatter
 
-case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Action)
+case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Action)
     extends SlashCommand with Options with ErrorMessages with AutoCompleteInt:
   override val description: String =
     s"Records a number of ${action.plural} you did, optionally add who gave them to you."
@@ -81,24 +81,28 @@ case class ActionCommand(events: Events, counterChanned: IO[Channel], action: Ac
 
   override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
     for
-      counterChanned <- EitherT.liftF(counterChanned)
-      _              <-
-        EitherT
-          .leftWhen(event.channel != counterChanned, s"This command can only be used in ${counterChanned.mention}.")
-      amount         <- event.getOption[Option[Int]]("amount").toEitherT.map(_.getOrElse(1))
-      _              <- EitherT.leftWhen(amount <= 0, "Amount must be greater than 0.")
-      date           <- getDate(event).toEitherT
-      _              <- EitherT.leftWhen(date.exists(_.isAfter(LocalDate.now)), s"Cannot add ${action.plural} in the future!")
-      giver          <- event.getOption[Option[User]]("giver").toEitherT
-      _              <- EitherT.leftWhen(giver.contains(event.author), s"You cannot give yourself ${action.plural}.")
-      _              <- EitherT.liftF(events.add(event.author, giver, action, amount, date))
-      actionText      = if amount == 1 then action.show else action.plural
-      givenBy         = giver.fold("")(giver => s" given by ${giver.mention}")
-      message         = date.fold(s"${event.author.mention} just did $amount $actionText$givenBy.") { date =>
-                          s"${event.author.mention} just added $amount $actionText$givenBy done on ${date.format(dateTimeFormatter)}."
-                        }
-      _              <-
-        EitherT.liftF(event.reply(message))
+      counterChan <- EitherT.liftF(counterChannel)
+      _           <- EitherT.leftWhen(
+                       event.channel != counterChan,
+                       s"This command can only be used in ${counterChan.mention}.",
+                     )
+      amount      <- event.getOption[Option[Int]]("amount").toEitherT.map(_.getOrElse(1))
+      _           <- EitherT.leftWhen(amount <= 0, "Amount must be greater than 0.")
+      date        <- getDate(event).toEitherT
+      _           <- EitherT.leftWhen(
+                       date.exists(_.isAfter(LocalDate.now)),
+                       s"Cannot add ${action.plural} in the future!",
+                     )
+      giver       <- event.getOption[Option[User]]("giver").toEitherT
+      _           <- EitherT.leftWhen(giver.contains(event.author), s"You cannot give yourself ${action.plural}.")
+      _           <- EitherT.liftF(events.add(event.author, giver, action, amount, date))
+      actionText   = if amount == 1 then action.show else action.plural
+      givenBy      = giver.fold("")(giver => s" given by ${giver.mention}")
+      message      = date.fold(s"${event.author.mention} just did $amount $actionText$givenBy.") { date =>
+                       s"${event.author.mention} just added $amount $actionText$givenBy done " +
+                         s"on ${date.format(dateTimeFormatter)}."
+                     }
+      _           <- EitherT.liftF(event.reply(message))
     yield true
 
 object ActionCommand:

@@ -18,7 +18,8 @@ extension (filters: List[Filter])
     val flattened = filters.flatten
     if flattened.isEmpty then Fragment.empty
     else start ++ flattened.reduceLeft(_ ++ sep ++ _) ++ end
-  def combineFilters: Fragment                                                                              = mkFragment(fr"where", fr"and")
+
+  def combineFilters: Fragment = mkFragment(fr"where", fr"and")
 
 trait RepositoryFields:
   protected val table: Fragment
@@ -64,7 +65,7 @@ trait Repository[DB: Read] extends RepositoryFields with Insert[DB] with Remove[
     updateQuery(updates*)(where, more*)
       .withUniqueGeneratedKeys[DB](allColumns*)
 
-  protected lazy val selectAll: Fragment = Fragment.const(allColumns.mkString("select ", ", ", " from")) ++ table
+  lazy val selectAll: Fragment = Fragment.const(allColumns.mkString("select ", ", ", " from")) ++ table
 
   private def query(filters: Iterable[Filter]) =
     (selectAll ++ filters.toList.combineFilters).query[DB]

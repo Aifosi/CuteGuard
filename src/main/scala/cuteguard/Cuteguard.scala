@@ -17,8 +17,10 @@ import org.flywaydb.core.Flyway
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications.commands&permissions=18432
-//https://discord.com/oauth2/authorize?client_id=990221153203281950&scope=bot%20applications.commands&permissions=18432 - Test
+//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications
+// .commands&permissions=18432
+//https://discord.com/oauth2/authorize?client_id=990221153203281950&scope=bot%20applications
+// .commands&permissions=18432 - Test
 object Cuteguard extends IOApp.Simple:
   private def acquireDiscordClient(
     discordDeferred: Deferred[IO, Discord],
@@ -76,6 +78,7 @@ object Cuteguard extends IOApp.Simple:
     cooldown: Cooldown,
     events: Events,
     counterChannel: IO[Channel],
+    eventEditor: EventEditor,
   )(using Logger[IO]): Commander =
     val fitness                    = Fitness(quadgrams)
     val commands: List[AnyCommand] = List(
@@ -89,6 +92,9 @@ object Cuteguard extends IOApp.Simple:
       ActionCommand(events, counterChannel, Action.WetDream),
       Total(events),
       Highscore(events),
+      EventList(events, eventEditor),
+      EventDelete(events, eventEditor),
+      EventEdit(events, eventEditor),
     )
 
     Commander(commands)
@@ -113,7 +119,9 @@ object Cuteguard extends IOApp.Simple:
       events = Events(users)
 
       cooldown       <- Cooldown(config.cooldown, events)
-      commander       = addCommands(config.subsmash, discordDeferred, gramsDeferred, cooldown, events, counterChannel)
+      eventEditor    <- EventEditor.apply
+      commander       =
+        addCommands(config.subsmash, discordDeferred, gramsDeferred, cooldown, events, counterChannel, eventEditor)
       given IORuntime = runtime
       messageListener = new MessageListener(commander)
       _              <- loadQuadgrams(gramsDeferred)
