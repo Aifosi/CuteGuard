@@ -161,7 +161,6 @@ object MacroHelper:
         }
       case _            =>
         '{ (reader: OptionReader[T], event: SlashCommandInteractionEvent, option: String) =>
-          println("ID")
           reader(event.getOption(option).getAsString)
         }
 

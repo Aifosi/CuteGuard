@@ -5,17 +5,17 @@ import cuteguard.db.Events
 import cuteguard.mapping.OptionWriter
 import cuteguard.model.Action
 import cuteguard.model.discord.Member
-import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
+import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
 import cuteguard.syntax.chaining.*
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import cats.syntax.option.*
 import org.typelevel.log4cats.Logger
 
-case class Highscore(events: Events) extends SlashCommand with Options with AutoComplete[Action] with ErrorMessages:
+case class Highscore(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
   /** If set to false only admins can see it by default.
     */
   override val isUserCommand: Boolean                                                  = true
@@ -47,8 +47,12 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
     }
       .mkString(start, "\n", "")
 
-  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
-    for
+  override val ephemeralResponses: Boolean = false
+
+  override def slowResponse(pattern: SlashPattern, event: SlashCommandEvent, slashAPI: Ref[IO, SlashAPI])(using
+    Logger[IO],
+  ): IO[Unit] =
+    val response = for
       action   <- event.getOption[Action]("action").toEitherT
       top      <- event.getOption[Option[Int]]("top").toEitherT.map(_.getOrElse(topDefault))
       lastDays <- event.getOption[Option[Int]]("last_days").toEitherT
@@ -66,7 +70,7 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
       daysText = lastDays.fold("")(lastDays => s" for the last $lastDays ${if lastDays == 1 then "day" else "days"}")
       text     = if topEvents.isEmpty then s"There are no entries for **${action.show}$daysText**."
                  else highscoreText(topEvents, action, daysText)
-      _       <- EitherT.liftF(event.reply(text))
-    yield true
+    yield text
+    eitherTResponse(response, slashAPI).void
 
   override val description: String = "Get the highscore for the given action."

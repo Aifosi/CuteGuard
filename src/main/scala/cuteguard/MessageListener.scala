@@ -18,6 +18,8 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
+import scala.concurrent.duration.*
+
 class MessageListener(
   commander: Commander,
 )(using l: Logger[IO], r: IORuntime, discordLogger: DiscordLogger)
@@ -39,8 +41,11 @@ class MessageListener(
                 if stopped then IO.pure(true)
                 else
                   for
+                    start    <- IO(System.nanoTime)
                     continue <- command.apply(command.pattern, event)
-                    _        <- IO.unlessA(continue)(log(event, command))
+                    _        <- log(event, command)
+                    end      <- IO(System.nanoTime)
+                    _        <- Logger[IO].debug(s"Cmmand took ${(end - start).nanos.toSeconds} secs to run.")
                   yield continue
             yield stop
           case (io, _)                                 => io
@@ -76,7 +81,8 @@ class MessageListener(
     runCommandList(SlashCommandEvent(event), commander.slashCommands) { (event, command) =>
       val options = event.allOptions.map {
         case option
-            if option.getType == OptionType.MENTIONABLE || option.getType == OptionType.USER || option.getType == OptionType.ROLE || option.getType == OptionType.CHANNEL =>
+            if option.getType == OptionType.MENTIONABLE || option.getType == OptionType.USER || option.getType ==
+              OptionType.ROLE || option.getType == OptionType.CHANNEL =>
           s"${option.getName}: ${option.getAsMentionable.getAsMention}"
         case option =>
           s"${option.getName}: ${option.getAsString}"

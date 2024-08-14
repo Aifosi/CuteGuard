@@ -37,13 +37,13 @@ trait SlowResponse:
     response: EitherT[IO, String, String],
     slashAPI: Ref[IO, SlashAPI],
   ): IO[Option[Message]] =
-    def respond(slashAPI: SlashAPI, response: String): IO[Option[Message]] =
-      if ephemeralResponses then slashAPI.replyEphemeral(response) else slashAPI.reply(response).map(Some(_))
     for
       response     <- response.value
       slashAPI     <- slashAPI.get
-      maybeMessage <- response.fold(
-                        error => respond(slashAPI, error),
-                        response => respond(slashAPI, response),
-                      )
+      maybeMessage <-
+        response.fold(
+          error => slashAPI.replyEphemeral(error),
+          response =>
+            if ephemeralResponses then slashAPI.replyEphemeral(response) else slashAPI.reply(response).map(Some(_)),
+        )
     yield maybeMessage

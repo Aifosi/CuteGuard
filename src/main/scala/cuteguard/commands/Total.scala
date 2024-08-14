@@ -5,17 +5,17 @@ import cuteguard.db.Events
 import cuteguard.mapping.OptionWriter
 import cuteguard.model.Action
 import cuteguard.model.discord.User
-import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
+import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import cats.syntax.option.*
 import cats.syntax.traverse.*
 import org.typelevel.log4cats.Logger
 
-case class Total(events: Events) extends SlashCommand with Options with AutoComplete[Action] with ErrorMessages:
+case class Total(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
   /** If set to false only admins can see it by default.
     */
   override val isUserCommand: Boolean                                                  = true
@@ -33,8 +33,12 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
     "action" -> Action.values.toList,
   ).fromSimplePure
 
-  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
-    for
+  override val ephemeralResponses: Boolean = false
+
+  override def slowResponse(pattern: SlashPattern, event: SlashCommandEvent, slashAPI: Ref[IO, SlashAPI])(using
+    Logger[IO],
+  ): IO[Unit] =
+    val response = for
       action   <- event.getOption[Option[Action]]("action").toEitherT
       _         = println(action)
       user     <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
@@ -54,7 +58,7 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
                       s"$total ${if total == 1 then action.show else action.plural}"
                     }
                     .mkString(start, ", ", giverText)
-      _        <- EitherT.liftF(event.reply(text))
-    yield true
+    yield text
+    eitherTResponse(response, slashAPI).void
 
   override val description: String = "Get the totals of the given action for you or the given user."

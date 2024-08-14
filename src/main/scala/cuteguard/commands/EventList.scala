@@ -4,17 +4,17 @@ import cuteguard.EventEditor
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
 import cuteguard.model.Action
-import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
+import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
 import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import cats.syntax.option.*
 import org.typelevel.log4cats.Logger
 
 case class EventList(events: Events, eventEditor: EventEditor)
-    extends SlashCommand with Options with AutoComplete[Action] with ErrorMessages:
+    extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
   /** If set to false only admins can see it by default.
     */
   override val isUserCommand: Boolean = true
@@ -27,8 +27,12 @@ case class EventList(events: Events, eventEditor: EventEditor)
     "action" -> Action.values.toList,
   ).fromSimplePure
 
-  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
-    for
+  override val ephemeralResponses: Boolean = true
+
+  override def slowResponse(pattern: SlashPattern, event: SlashCommandEvent, slashAPI: Ref[IO, SlashAPI])(using
+    Logger[IO],
+  ): IO[Unit] =
+    val response = for
       action         <- event.getOption[Action]("action").toEitherT
       events         <- EitherT.liftF(events.list(event.author.some, None, action.some, None))
       _              <- EitherT.leftWhen(events.isEmpty, s"You have no ${action.plural} on record.")
@@ -37,6 +41,7 @@ case class EventList(events: Events, eventEditor: EventEditor)
       formattedEvents = EventEditor.formatEvents(eventMap)
       editMessage     = "You can edit the following events for the next 10 minutes\n"
       _              <- EitherT.liftF(event.replyEphemeral(editMessage + formattedEvents))
-    yield true
+    yield editMessage + formattedEvents
+    eitherTResponse(response, slashAPI).void
 
   override val description: String = "Lists actions history to be edited or deleted."
