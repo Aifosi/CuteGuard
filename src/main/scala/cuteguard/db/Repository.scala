@@ -4,6 +4,7 @@ import cats.data.OptionT
 import cats.syntax.option.*
 import doobie.*
 import doobie.implicits.*
+import doobie.util.unlabeled
 import fs2.Stream
 
 import scala.concurrent.duration.*
@@ -34,50 +35,58 @@ trait Insert[DB: Read]:
   protected def sql(columns: String*): String =
     fr"insert into $table".internals.sql + columns.mkString("(", ", ", ") values") + unknowns(columns.length)
 
-  def insertOne[Info: Write](info: Info)(columns: String*): ConnectionIO[DB] =
-    Update[Info](sql(columns*)).withUniqueGeneratedKeys[DB](this.allColumns*)(info)
+  def insertOne[Info: Write](info: Info)(columns: String*)(label: Option[String]): ConnectionIO[DB] =
+    Update[Info](sql(columns*), None, label.getOrElse(unlabeled)).withUniqueGeneratedKeys[DB](this.allColumns*)(info)
 
-  def insertMany[Info: Write](info: List[Info])(columns: String*): Stream[ConnectionIO, DB] =
-    Update[Info](sql(columns*)).updateManyWithGeneratedKeys[DB](this.allColumns*)(info)
+  def insertMany[Info: Write](info: List[Info])(columns: String*)(label: Option[String]): Stream[ConnectionIO, DB] =
+    Update[Info](sql(columns*), None, label.getOrElse(unlabeled))
+      .updateManyWithGeneratedKeys[DB](this.allColumns*)(info)
 
 trait Remove[DB: Read]:
   this: Repository[DB] =>
   protected val table: Fragment
 
-  def remove(filter: Filter, moreFilters: Filter*): ConnectionIO[Int] =
-    (fr"delete from" ++ table ++ (filter +: moreFilters).toList.combineFilters ++ fr"").update.run
+  def remove(filter: Filter, moreFilters: Filter*)(label: Option[String]): ConnectionIO[Int] =
+    (fr"delete from" ++ table ++ (filter +: moreFilters).toList.combineFilters ++ fr"")
+      .updateWithLabel(label.getOrElse(unlabeled))
+      .run
 
 trait Repository[DB: Read] extends RepositoryFields with Insert[DB] with Remove[DB]:
   private val updatedAt: Filter = fr"updated_at = NOW()".some
 
-  private inline def updateQuery(updates: Filter*)(where: Fragment, more: Fragment*) =
+  private inline def updateQuery(updates: Filter*)(where: Fragment, more: Fragment*)(label: Option[String]) =
     (updates.toList :+ updatedAt)
       .mkFragment(fr"update $table set", fr",", (where +: more.toList).map(_.some).combineFilters)
-      .update
+      .updateWithLabel(label.getOrElse(unlabeled))
 
-  protected inline def innerUpdateMany(updates: Filter*)(where: Fragment, more: Fragment*): ConnectionIO[List[DB]] =
-    updateQuery(updates*)(where, more*)
+  protected inline def innerUpdateMany(
+    updates: Filter*,
+  )(where: Fragment, more: Fragment*)(label: Option[String]): ConnectionIO[List[DB]] =
+    updateQuery(updates*)(where, more*)(label)
       .withGeneratedKeys[DB](allColumns*)
       .compile
       .toList
 
-  protected inline def innerUpdate(updates: Filter*)(where: Fragment, more: Fragment*): ConnectionIO[DB] =
-    updateQuery(updates*)(where, more*)
+  protected inline def innerUpdate(
+    updates: Filter*,
+  )(where: Fragment, more: Fragment*)(label: Option[String]): ConnectionIO[DB] =
+    updateQuery(updates*)(where, more*)(label)
       .withUniqueGeneratedKeys[DB](allColumns*)
 
   lazy val selectAll: Fragment = Fragment.const(allColumns.mkString("select ", ", ", " from")) ++ table
 
-  private def query(filters: Iterable[Filter]) =
-    (selectAll ++ filters.toList.combineFilters).query[DB]
+  private def query(filters: Iterable[Filter])(label: Option[String]) =
+    (selectAll ++ filters.toList.combineFilters).queryWithLabel[DB](label.getOrElse(unlabeled))
 
-  def list(filters: Filter*): ConnectionIO[List[DB]] = query(filters).to[List]
+  def list(filters: Filter*)(label: Option[String]): ConnectionIO[List[DB]] = query(filters)(label).to[List]
 
-  def find(filters: Filter*): OptionT[ConnectionIO, DB] = OptionT(query(filters).option)
+  def find(filters: Filter*)(label: Option[String]): OptionT[ConnectionIO, DB] = OptionT(query(filters)(label).option)
 
-  def get(filters: Filter*): ConnectionIO[DB] =
-    find(filters*).getOrElseF(FC.raiseError(new Exception("Failed to find item in repository")))
+  def get(filters: Filter*)(label: Option[String]): ConnectionIO[DB] =
+    find(filters*)(label).getOrElseF(FC.raiseError(new Exception("Failed to find item in repository")))
 
-  def update(updates: Filter*)(where: Fragment, more: Fragment*): ConnectionIO[DB] = innerUpdate(updates*)(where, more*)
+  def update(updates: Filter*)(where: Fragment, more: Fragment*)(label: Option[String]): ConnectionIO[DB] =
+    innerUpdate(updates*)(where, more*)(label)
 
-  def updateMany(updates: Filter*)(where: Fragment, more: Fragment*): ConnectionIO[List[DB]] =
-    innerUpdateMany(updates*)(where, more*)
+  def updateMany(updates: Filter*)(where: Fragment, more: Fragment*)(label: Option[String]): ConnectionIO[List[DB]] =
+    innerUpdateMany(updates*)(where, more*)(label)

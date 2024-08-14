@@ -16,6 +16,7 @@ import doobie.postgres.implicits.*
 import doobie.syntax.SqlInterpolator.SingleFragment
 import doobie.syntax.connectionio.*
 import doobie.syntax.string.*
+import doobie.util.unlabeled
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
@@ -39,10 +40,10 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
     "date",
   )
 
-  override def toModel(event: Event): Maybe[CuteguardEvent] =
+  override def toModel(label: Option[String])(event: Event): Maybe[CuteguardEvent] =
     for
-      receiver <- EitherT.liftF(users.findByID(event.receiverUserId).value)
-      issuer   <- EitherT.liftF(event.issuerUserId.traverse(users.findByID).value)
+      receiver <- EitherT.liftF(users.findByID(event.receiverUserId, label).value)
+      issuer   <- EitherT.liftF(event.issuerUserId.traverse(users.findByID(_, label)).value)
     yield CuteguardEvent(
       event.id,
       receiver,
@@ -58,12 +59,13 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
     action: Action,
     amount: Int,
     date: Option[LocalDate],
+    label: Option[String] = None,
   ): IO[CuteguardEvent] =
     for
-      receiver <- users.add(user)
-      issuer   <- giver.traverse(users.add)
+      receiver <- users.add(user, label)
+      issuer   <- giver.traverse(users.add(_, label))
       instant   = date.fold(Instant.now)(_.atStartOfDayUTC)
-      event    <- insertOne((receiver.id, issuer.map(_.id), action, amount, instant))(columns*)
+      event    <- insertOne((receiver.id, issuer.map(_.id), action, amount, instant))(columns*)(label)
     yield event
 
   def list(
@@ -71,6 +73,7 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
     giver: Option[DiscordUser],
     action: Option[Action],
     lastDays: Option[Int],
+    label: Option[String] = None,
   ): IO[List[CuteguardEvent]] =
     val earliestDate = lastDays.map(_.toLong).map(LocalDate.now.minusDays).map(_.atStartOfDayUTC)
     val filters      = List(
@@ -96,27 +99,30 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       filters.combineFilters
 
     query
-      .query[(UUID, UUID, DiscordID, Option[UUID], Option[DiscordID], Action, Int, Instant)]
+      .queryWithLabel[(UUID, UUID, DiscordID, Option[UUID], Option[DiscordID], Action, Int, Instant)](
+        label.getOrElse(unlabeled),
+      )
       .to[List]
       .transact(transactor)
       .flatMap(_.traverse {
         (id, receiver_user_uuid, receiver_user_id, issuer_user_uuid, issuer_user_id, action, amount, date) =>
           for
-            receiver <- users.toModel(User(receiver_user_uuid, receiver_user_id)).toOption.value
+            receiver <- users.toModel(label)(User(receiver_user_uuid, receiver_user_id)).toOption.value
             issuer   <- issuer_user_uuid
                           .zip(issuer_user_id)
-                          .traverse(tuple => users.toModel(User.apply.tupled(tuple)).toOption)
+                          .traverse(tuple => users.toModel(label)(User.apply.tupled(tuple)).toOption)
                           .value
           yield CuteguardEvent(id, receiver, issuer, action, amount, date)
       })
 
-  def delete(id: UUID): IO[Unit] = remove(id.equalID).void
+  def delete(id: UUID, label: Option[String] = None): IO[Unit] = remove(id.equalID)(label).void
 
   def edit(
     id: UUID,
     giver: Option[DiscordUser],
     amount: Option[Int],
     date: Option[LocalDate],
+    label: Option[String] = None,
   ): OptionT[IO, CuteguardEvent] =
     for
       giver <- giver.traverse(giver => users.findByDiscordID(giver.discordID))
@@ -125,6 +131,6 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
                    giver.map(giver => fr"issuer_user_id = ${giver.id}"),
                    amount.map(amount => fr"amount = $amount"),
                    date.map(date => fr"date = ${date.atStartOfDayUTC}"),
-                 )(fr"id = $id"),
+                 )(fr"id = $id")(label),
                )
     yield event
