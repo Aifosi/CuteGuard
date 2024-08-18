@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: cuteguard
       POSTGRES_PASSWORD: cuteguard
       POSTGRES_DB: cuteguard
+    volumes:
+      - "./data:/var/lib/postgresql/data"
     healthcheck:
       test: [ "CMD-SHELL", "sh -c 'pg_isready'" ]
       interval: 1s

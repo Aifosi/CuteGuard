@@ -3,7 +3,7 @@ package cuteguard.commands
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
 import cuteguard.mapping.OptionWriter
-import cuteguard.model.Action
+import cuteguard.model.{Action, Event}
 import cuteguard.model.discord.Member
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
 import cuteguard.syntax.chaining.*
@@ -37,14 +37,14 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
     def padWithThousandsSeparator(size: Int): String =
       int.toString.grouped(3).mkString(" ").reverse.padTo(size, ' ').reverse
 
-  def highscoreText(topEvents: List[((Option[Member], Int), Int)], action: Action, daysText: String) =
+  def highscoreText(topEvents: List[((Member, Int), Int)], action: Action, daysText: String) =
     val start            = s"Current highscore for **${action.show}**$daysText is:\n"
     val maxTotalTextSize = topEvents.head(0)(1).toString.grouped(3).mkString(" ").length
     val maxTextSize      = topEvents.size.toString.grouped(3).mkString(" ").length
     topEvents.map { case ((member, total), top) =>
       val totalText = total.padWithThousandsSeparator(maxTotalTextSize)
       val topText   = (top + 1).padWithThousandsSeparator(maxTextSize)
-      s"`$topText. $totalText - ${member.fold("Member left server")(_.guildName)}`"
+      s"`$topText. $totalText - ${member.guildName}`"
     }
       .mkString(start, "\n", "")
 
@@ -60,8 +60,10 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
       _        <- EitherT.leftWhen(lastDays.exists(_ <= 0), "`last_days` must be greater than 0!")
       events   <- EitherT.liftF(events.list(None, None, action.some, lastDays))
       topEvents = events
-                    .foldLeft(Map.empty[Option[Member], Int]) { (acc, event) =>
-                      acc + (event.receiver -> (acc.getOrElse(event.receiver, 0) + event.amount))
+                    .foldLeft(Map.empty[Member, Int]) {
+                      case (acc, Event(_, None, _, _, _, _))                => acc
+                      case (acc, Event(_, Some(receiver), _, _, amount, _)) =>
+                        acc + (receiver -> (acc.getOrElse(receiver, 0) + amount))
                     }
                     .toList
                     .sortBy(_(1))(Ordering[Int].reverse)

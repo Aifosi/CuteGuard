@@ -19,7 +19,7 @@ case class User(
   discordID: DiscordID,
 )
 
-class Users(guild: Maybe[Guild])(using Transactor[IO]) extends ModelRepository[User, CuteguardUser]:
+class Users(val guild: Maybe[Guild])(using Transactor[IO]) extends ModelRepository[User, CuteguardUser]:
   override protected val table: Fragment = fr"users"
 
   override protected val columns: List[String]                                  = List(

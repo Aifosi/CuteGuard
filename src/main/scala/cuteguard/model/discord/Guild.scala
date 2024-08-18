@@ -6,7 +6,9 @@ import cuteguard.syntax.io.*
 import cuteguard.syntax.task.*
 import cuteguard.utils.Maybe
 
+import cats.data.EitherT
 import cats.effect.IO
+import cats.syntax.either.*
 import fs2.Stream
 import net.dv8tion.jda.api.entities.{Guild as JDAGuild, User as JDAUser}
 import net.dv8tion.jda.api.interactions.commands.Command as JDACommand
@@ -32,6 +34,16 @@ class Guild(private[model] val guild: JDAGuild):
 
   def member(userDiscordID: DiscordID): Maybe[Member] =
     actionGetter[Long](userDiscordID.toLong, "guild member", guild.retrieveMemberById, new Member(_))
+
+  def members(userDiscordIDs: List[DiscordID]): Maybe[List[Member]] =
+    EitherT {
+      guild
+        .retrieveMembersByIds(userDiscordIDs.map(_.toLong)*)
+        .toIO
+        .map(_.asScala.toList.map(new Member(_)))
+        .attempt
+        .map(_.leftMap(_ => new Exception(s"Failed to get members using: $userDiscordIDs")))
+    }
 
   def addCommands(commands: List[SlashCommandData]): IO[List[DiscordID]] =
     guild

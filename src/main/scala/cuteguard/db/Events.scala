@@ -1,7 +1,7 @@
 package cuteguard.db
 
 import cuteguard.db.Filters.*
-import cuteguard.model.{Action, Event as CuteguardEvent}
+import cuteguard.model.{Action, Event as CuteguardEvent, User as CuteguardUser}
 import cuteguard.model.discord.{DiscordID, User as DiscordUser}
 import cuteguard.syntax.localdate.*
 import cuteguard.utils.Maybe
@@ -98,22 +98,40 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       fr"LEFT JOIN users AS issuer_user_ids ON events.issuer_user_id = issuer_user_ids.id" ++
       filters.combineFilters
 
-    query
+    val list = query
       .queryWithLabel[(UUID, UUID, DiscordID, Option[UUID], Option[DiscordID], Action, Int, Instant)](
         label.getOrElse(unlabeled),
       )
       .to[List]
       .transact(transactor)
-      .flatMap(_.traverse {
-        (id, receiver_user_uuid, receiver_user_id, issuer_user_uuid, issuer_user_id, action, amount, date) =>
-          for
-            receiver <- users.toModel(label)(User(receiver_user_uuid, receiver_user_id)).toOption.value
-            issuer   <- issuer_user_uuid
-                          .zip(issuer_user_id)
-                          .traverse(tuple => users.toModel(label)(User.apply.tupled(tuple)).toOption)
-                          .value
-          yield CuteguardEvent(id, receiver, issuer, action, amount, date)
-      })
+
+    (for
+      list         <- EitherT.liftF(list)
+      guild        <- users.guild
+      discordIdsMap = list
+                        .flatMap((_, receiver_user_uuid, receiver_user_id, issuer_user_uuid, issuer_user_id, _, _, _) =>
+                          List((receiver_user_id, receiver_user_uuid)) ++ issuer_user_id.zip(issuer_user_uuid),
+                        )
+                        .toMap
+
+      userMap <- guild
+                   .members(discordIdsMap.keys.toList)
+                   .map(_.map { member =>
+                     val uuid = discordIdsMap(member.discordID)
+                     uuid -> CuteguardUser(uuid, member)
+                   }.toMap)
+
+      events = list.map { (id, receiver_user_uuid, _, issuer_user_uuid, _, action, amount, date) =>
+                 CuteguardEvent(
+                   id,
+                   userMap.get(receiver_user_uuid),
+                   issuer_user_uuid.map(userMap.get),
+                   action,
+                   amount,
+                   date,
+                 )
+               }
+    yield events).toOption.value.map(_.toList.flatten)
 
   def delete(id: UUID, label: Option[String] = None): IO[Unit] = remove(id.equalID)(label).void
 
