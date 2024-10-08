@@ -8,7 +8,6 @@ import cuteguard.utils.Maybe
 
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
-import cats.instances.list.*
 import cats.instances.option.*
 import cats.syntax.traverse.*
 import doobie.{Fragment, Transactor}
@@ -17,6 +16,7 @@ import doobie.syntax.SqlInterpolator.SingleFragment
 import doobie.syntax.connectionio.*
 import doobie.syntax.string.*
 import doobie.util.unlabeled
+import org.typelevel.log4cats.Logger
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
@@ -29,7 +29,7 @@ case class Event(
   date: Instant,
 )
 
-class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, CuteguardEvent]:
+class Events(val users: Users)(using Transactor[IO]) extends ModelRepository[Event, CuteguardEvent]:
   override protected val table: Fragment = fr"events"
 
   override protected val columns: List[String] = List(
@@ -68,13 +68,13 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       event    <- insertOne((receiver.id, issuer.map(_.id), action, amount, instant))(columns*)(label)
     yield event
 
-  def list(
+  def lowList(
     user: Option[DiscordUser],
     giver: Option[DiscordUser],
     action: Option[Action],
     lastDays: Option[Int],
     label: Option[String] = None,
-  ): IO[List[CuteguardEvent]] =
+  ): IO[List[(UUID, UUID, DiscordID, Option[UUID], Option[DiscordID], Action, Int, Instant)]] =
     val earliestDate = lastDays.map(_.toLong).map(LocalDate.now.minusDays).map(_.atStartOfDayUTC)
     val filters      = List(
       user.map(user => fr"receiver_user_ids.user_discord_id = ${user.discordID}"),
@@ -98,15 +98,22 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
       fr"LEFT JOIN users AS issuer_user_ids ON events.issuer_user_id = issuer_user_ids.id" ++
       filters.combineFilters
 
-    val list = query
+    query
       .queryWithLabel[(UUID, UUID, DiscordID, Option[UUID], Option[DiscordID], Action, Int, Instant)](
         label.getOrElse(unlabeled),
       )
       .to[List]
       .transact(transactor)
 
+  def list(
+    user: Option[DiscordUser],
+    giver: Option[DiscordUser],
+    action: Option[Action],
+    lastDays: Option[Int],
+    label: Option[String] = None,
+  )(using Logger[IO]): IO[List[CuteguardEvent]] =
     (for
-      list         <- EitherT.liftF(list)
+      list         <- EitherT.liftF(lowList(user, giver, action, lastDays, label))
       guild        <- users.guild
       discordIdsMap = list
                         .flatMap((_, receiver_user_uuid, receiver_user_id, issuer_user_uuid, issuer_user_id, _, _, _) =>
@@ -115,7 +122,7 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
                         .toMap
 
       userMap <- guild
-                   .members(discordIdsMap.keys.toList)
+                   .members(discordIdsMap.keySet)
                    .map(_.map { member =>
                      val uuid = discordIdsMap(member.discordID)
                      uuid -> CuteguardUser(uuid, member)
@@ -131,22 +138,26 @@ class Events(users: Users)(using Transactor[IO]) extends ModelRepository[Event, 
                    date,
                  )
                }
-    yield events).toOption.value.map(_.toList.flatten)
+    yield events)
+      .foldF(
+        Logger[IO].error(_)("Failed to list users").as(List.empty),
+        IO.pure,
+      )
 
   def delete(id: UUID, label: Option[String] = None): IO[Unit] = remove(id.equalID)(label).void
 
   def edit(
     id: UUID,
-    giver: Option[DiscordUser],
+    giver: Option[Option[DiscordUser]],
     amount: Option[Int],
     date: Option[LocalDate],
     label: Option[String] = None,
   ): OptionT[IO, CuteguardEvent] =
     for
-      giver <- giver.traverse(giver => users.findByDiscordID(giver.discordID))
+      giver <- giver.traverse(_.traverse(giver => users.findByDiscordID(giver.discordID)))
       event <- OptionT.liftF(
                  update(
-                   giver.map(giver => fr"issuer_user_id = ${giver.id}"),
+                   giver.map(giver => fr"issuer_user_id = ${giver.map(_.id)}"),
                    amount.map(amount => fr"amount = $amount"),
                    date.map(date => fr"date = ${date.atStartOfDayUTC}"),
                  )(fr"id = $id")(label),

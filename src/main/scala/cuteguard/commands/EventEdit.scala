@@ -38,9 +38,14 @@ class EventEdit(events: Events, eventEditor: EventEditor) extends SlashCommand w
                        removeGiver.isDefined && giver.isDefined,
                        "Can't both define `remove_giver` and `giver`!",
                      )
+      _           <- EitherT.leftWhen(
+                       List(giver, amount, removeGiver).flatten.isEmpty,
+                       "Please choose what you want to edit from this event.",
+                     )
+      finalGiver   = Option.when(removeGiver.contains(true) || giver.isDefined)(giver)
       _           <- EitherT.liftF(
                        events
-                         .edit(activeEdit(id).id, giver.filter(_ => removeGiver.contains(true)), amount, None)
+                         .edit(activeEdit(id).id, finalGiver, amount, None, Some("Edit event user command"))
                          .foldF(Logger[IO].debug("Update failed."))(_ => IO.unit),
                      )
       _           <- EitherT.liftF(eventEditor.registerActiveEdit(event.author, activeEdit))

@@ -26,7 +26,7 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
     _.addOption[Option[User]]("giver", "Get total for actions given by this user."),
     _.addOption[Option[Int]](
       "last_days",
-      "How many days in the past do you want highscores for. Default is the whole history",
+      "How many days in the past do you want highscores for. Default is 30 days.",
     ),
   )
   override val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[Action]]] = Map(
@@ -42,11 +42,11 @@ case class Total(events: Events) extends SlashCommand with Options with AutoComp
       action     <- event.getOption[Option[Action]]("action").toEitherT
       user       <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
       giver      <- event.getOption[Option[User]]("giver").toEitherT
-      lastDays   <- event.getOption[Option[Int]]("last_days").toEitherT
-      _          <- EitherT.leftWhen(lastDays.exists(_ <= 0), "`last_days` must be greater than 0!")
-      events     <- EitherT.liftF(events.list(user.some, giver, action, lastDays))
+      lastDays   <- event.getOption[Option[Int]]("last_days").toEitherT.map(_.getOrElse(30))
+      _          <- EitherT.leftWhen(lastDays <= 0, "`last_days` must be greater than 0!")
+      events     <- EitherT.liftF(events.list(user.some, giver, action, lastDays.some))
       giverText   = giver.fold(".")(giver => s" given by ${giver.mention}.")
-      days        = lastDays.fold("")(lastDays => s"For the last $lastDays ${if lastDays == 1 then "day" else "days"} ")
+      days        = s"For the last $lastDays ${if lastDays == 1 then "day" else "days"} "
       start       = s"$days${user.mention} has a total of "
       textByEvent = events
                       .groupBy(_.action)

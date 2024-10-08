@@ -35,10 +35,10 @@ class Guild(private[model] val guild: JDAGuild):
   def member(userDiscordID: DiscordID): Maybe[Member] =
     actionGetter[Long](userDiscordID.toLong, "guild member", guild.retrieveMemberById, new Member(_))
 
-  def members(userDiscordIDs: List[DiscordID]): Maybe[List[Member]] =
+  def members(userDiscordIDs: Set[DiscordID]): Maybe[List[Member]] =
     EitherT {
       guild
-        .retrieveMembersByIds(userDiscordIDs.map(_.toLong)*)
+        .retrieveMembersByIds(userDiscordIDs.map(_.toLong).toSeq*)
         .toIO
         .map(_.asScala.toList.map(new Member(_)))
         .attempt

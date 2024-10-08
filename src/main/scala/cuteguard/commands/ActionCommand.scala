@@ -12,7 +12,6 @@ import cuteguard.utils.toEitherT
 
 import cats.data.EitherT
 import cats.effect.IO
-import cats.syntax.option.*
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
@@ -70,14 +69,14 @@ case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Ac
     yield (year, month, day) match
       case (None, None, None) => None
       case (year, month, day) =>
-        val now = LocalDate.now
-        LocalDate
+        val now  = LocalDate.now
+        val date = LocalDate
           .of(
             year.getOrElse(now.getYear),
             month.getOrElse(now.getMonthValue),
             day.getOrElse(now.getDayOfMonth),
           )
-          .some
+        Option.unless(now == date)(date)
 
   override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
     for

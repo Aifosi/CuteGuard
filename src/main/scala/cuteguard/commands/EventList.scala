@@ -40,7 +40,6 @@ case class EventList(events: Events, eventEditor: EventEditor)
       _              <- EitherT.liftF(eventEditor.registerActiveEdit(event.author, eventMap))
       formattedEvents = EventEditor.formatEvents(eventMap)
       editMessage     = "You can edit the following events for the next 10 minutes\n"
-      _              <- EitherT.liftF(event.replyEphemeral(editMessage + formattedEvents))
     yield editMessage + formattedEvents
     eitherTResponse(response, slashAPI).void
 

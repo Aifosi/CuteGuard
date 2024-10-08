@@ -38,27 +38,27 @@ object EventEditor:
     Ref.of[IO, Map[DiscordID, (FiberIO[Unit], Map[Int, Event])]](Map.empty).map(new EventEditor(_))
 
   def formatEvents(eventMap: Map[Int, Event]): String =
-    val header     = ("ID", "Giver", "Amount", "Date")
+    val header     = ("ID", "Amount", "Date", "Giver")
     val events     = header +:
-      eventMap.toList.map { case (id, Event(_, _, issuer, _, amount, date)) =>
-        val issuerText = issuer.fold("User left server")(_.fold("None")(_.nameInGuild))
+      eventMap.toList.sortBy(_(0)).map { case (id, Event(_, _, issuer, _, amount, date)) =>
+        val issuerText = issuer.fold("None")(_.fold("User left server")(_.nameInGuild))
         val dateText   = LocalDate.ofInstant(date, ZoneOffset.UTC).format(ActionCommand.dateTimeFormatter)
-        (id.toString, issuerText, amount.toString, dateText)
+        (id.toString, amount.toString, dateText, issuerText)
       }
     val maxLengths = events.foldLeft((0, 0, 0, 0)) {
-      case ((idMax, giverMax, amountMax, dateMax), (id, giver, amount, date)) =>
+      case ((idMax, amountMax, dateMax, giverMax), (id, amount, date, giver)) =>
         (
           math.max(idMax, id.length),
-          math.max(giverMax, giver.length),
           math.max(amountMax, amount.length),
           math.max(dateMax, date.length),
+          math.max(giverMax, giver.length),
         )
     }
-    events.map { (id, giver, amount, date) =>
+    events.map { (id, amount, date, giver) =>
       List(
         id.padTo(maxLengths(0), ' '),
-        giver.padTo(maxLengths(1), ' '),
         amount.padTo(maxLengths(2), ' '),
         date.padTo(maxLengths(3), ' '),
+        giver.padTo(maxLengths(1), ' '),
       ).mkString(" ")
     }.mkString("```", "\n", "```")

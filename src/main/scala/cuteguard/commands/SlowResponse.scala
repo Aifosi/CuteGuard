@@ -21,7 +21,7 @@ trait SlowResponse:
       for
         _       <- IO.sleep(2.seconds)
         replied <- repliedRef.get
-        _       <- IO.whenA(!replied) {
+        _       <- IO.unlessA(replied) {
                      for
                        _ <- slashAPI.set(event.hook)
                        _ <- event.deferReply(ephemeralResponses)
@@ -35,8 +35,8 @@ trait SlowResponse:
       repliedRef <- Ref.of[IO, Boolean](false)
       fiber      <- switchToHook(slashAPI, repliedRef).start
       _          <- slowResponse(pattern, event, slashAPI)
-      _          <- fiber.cancel
       _          <- repliedRef.set(true)
+      _          <- fiber.cancel
     yield true
 
   protected def eitherTResponse(
