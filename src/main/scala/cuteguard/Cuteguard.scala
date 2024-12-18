@@ -93,6 +93,7 @@ object Cuteguard extends IOApp.Simple:
       ActionCommand(events, counterChannel, Action.Spank),
       Total(events),
       Highscore(events),
+      Last(events),
       EventList(events, eventEditor),
       EventDelete(events, eventEditor),
       EventEdit(events, eventEditor),
