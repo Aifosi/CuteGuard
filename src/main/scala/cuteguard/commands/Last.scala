@@ -1,5 +1,7 @@
 package cuteguard.commands
 
+import cuteguard.*
+import cuteguard.Epoch.*
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
 import cuteguard.mapping.OptionWriter
@@ -11,9 +13,8 @@ import cuteguard.utils.toEitherT
 import cats.data.EitherT
 import cats.effect.{IO, Ref}
 import cats.syntax.option.*
+import cats.syntax.show.*
 import org.typelevel.log4cats.Logger
-
-import java.time.{Clock, LocalDate}
 
 case class Last(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
   /** If set to false only admins can see it by default.
@@ -30,6 +31,8 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
 
   override val ephemeralResponses: Boolean = false
 
+  private def dateText(event: Event) = event.date.toEpoch.toRelativeTime.show
+
   override def slowResponse(pattern: SlashPattern, event: SlashCommandEvent, slashAPI: Ref[IO, SlashAPI])(using
     Logger[IO],
   ): IO[Unit] =
@@ -39,9 +42,6 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
       events    <- EitherT.liftF(events.list(user.some, None, action.some, None, "'last' command".some))
       mostRecent = events.maxByOption(_.date)
       emptyText  = s"${user.mention} has no ${action.plural} on record."
-      dateText   =
-        (event: Event) =>
-          LocalDate.ofInstant(event.date, Clock.systemDefaultZone.getZone).format(ActionCommand.dateTimeFormatter)
       text       = mostRecent.fold(emptyText)(event => s"${user.mention} last $action was on ${dateText(event)}")
     yield text
     eitherTResponse(response, slashAPI).void

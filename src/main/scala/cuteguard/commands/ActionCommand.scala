@@ -1,6 +1,7 @@
 package cuteguard.commands
 
-import cuteguard.commands.ActionCommand.dateTimeFormatter
+import cuteguard.*
+import cuteguard.Epoch.*
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
 import cuteguard.mapping.OptionWriter
@@ -8,15 +9,16 @@ import cuteguard.model.Action
 import cuteguard.model.discord.{Channel, User}
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
 import cuteguard.syntax.eithert.*
+import cuteguard.syntax.localdate.*
 import cuteguard.utils.toEitherT
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.syntax.show.given
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
 import java.time.{LocalDate, YearMonth}
-import java.time.format.DateTimeFormatter
 
 case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Action)
     extends SlashCommand with Options with ErrorMessages with AutoCompleteInt:
@@ -98,11 +100,7 @@ case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Ac
       actionText   = if amount == 1 then action.show else action.plural
       givenBy      = giver.fold("")(giver => s" given by ${giver.mention}")
       message      = date.fold(s"${event.author.mention} just did $amount $actionText$givenBy.") { date =>
-                       s"${event.author.mention} just added $amount $actionText$givenBy done " +
-                         s"on ${date.format(dateTimeFormatter)}."
+                       show"${event.author.mention} just added $amount $actionText$givenBy done ${date.toRelativeTime}."
                      }
       _           <- EitherT.liftF(event.reply(message))
     yield true
-
-object ActionCommand:
-  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")

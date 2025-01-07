@@ -18,7 +18,7 @@ object DurationShow:
 
   private val units = TimeUnit.values.reverse
 
-  given Show[Duration] = {
+  given Show[Duration] =
     case duration: FiniteDuration =>
       val chosenUnit = units
         .find(_.convert(duration.length, duration.unit) > 0)
@@ -28,4 +28,3 @@ object DurationShow:
     case Duration.MinusInf        => "-∞ (minus infinity)"
     case Duration.Inf             => "∞ (infinity)"
     case _                        => "undefined"
-  }

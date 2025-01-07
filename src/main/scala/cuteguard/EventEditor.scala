@@ -1,15 +1,17 @@
 package cuteguard
 
-import cuteguard.commands.ActionCommand
+import cuteguard.*
+import cuteguard.Epoch.*
 import cuteguard.model.Event
 import cuteguard.model.discord.{DiscordID, User}
 
+import cats.Show
 import cats.effect.{FiberIO, IO, Ref}
 import cats.instances.option.*
 import cats.syntax.foldable.*
+import cats.syntax.show.*
 import cats.syntax.traverse.*
 
-import java.time.{LocalDate, ZoneOffset}
 import scala.concurrent.duration.*
 
 class EventEditor private (activeEditsRef: Ref[IO, Map[DiscordID, (FiberIO[Unit], Map[Int, Event])]]):
@@ -42,7 +44,7 @@ object EventEditor:
     val events     = header +:
       eventMap.toList.sortBy(_(0)).map { case (id, Event(_, _, issuer, _, amount, date)) =>
         val issuerText = issuer.fold("None")(_.fold("User left server")(_.nameInGuild))
-        val dateText   = LocalDate.ofInstant(date, ZoneOffset.UTC).format(ActionCommand.dateTimeFormatter)
+        val dateText   = date.toEpoch.toRelativeTime.show
         (id.toString, amount.toString, dateText, issuerText)
       }
     val maxLengths = events.foldLeft((0, 0, 0, 0)) {
