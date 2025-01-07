@@ -2,6 +2,7 @@ package cuteguard.commands
 
 import cuteguard.*
 import cuteguard.Epoch.*
+import cuteguard.RelativeTime.given
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
 import cuteguard.mapping.OptionWriter
@@ -13,7 +14,7 @@ import cuteguard.utils.toEitherT
 import cats.data.EitherT
 import cats.effect.{IO, Ref}
 import cats.syntax.option.*
-import cats.syntax.show.*
+import cats.syntax.show.given
 import org.typelevel.log4cats.Logger
 
 case class Last(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
@@ -31,7 +32,7 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
 
   override val ephemeralResponses: Boolean = false
 
-  private def dateText(event: Event) = event.date.toEpoch.toRelativeTime.show
+  private def dateText(event: Event): String = show"${event.date.toEpoch.toRelativeTime}"
 
   override def slowResponse(pattern: SlashPattern, event: SlashCommandEvent, slashAPI: Ref[IO, SlashAPI])(using
     Logger[IO],
