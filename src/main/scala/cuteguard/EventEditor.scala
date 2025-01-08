@@ -10,7 +10,6 @@ import cats.Show
 import cats.effect.{FiberIO, IO, Ref}
 import cats.instances.option.*
 import cats.syntax.foldable.*
-import cats.syntax.show.given
 import cats.syntax.traverse.*
 
 import scala.concurrent.duration.*
@@ -45,7 +44,7 @@ object EventEditor:
     val events     = header +:
       eventMap.toList.sortBy(_(0)).map { case (id, Event(_, _, issuer, _, amount, date)) =>
         val issuerText = issuer.fold("None")(_.fold("User left server")(_.nameInGuild))
-        val dateText   = show"${date.toEpoch.toRelativeTime}"
+        val dateText   = Show[RelativeTime].show(date.toEpoch.toRelativeTime)
         (id.toString, amount.toString, dateText, issuerText)
       }
     val maxLengths = events.foldLeft((0, 0, 0, 0)) {
