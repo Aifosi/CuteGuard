@@ -1,6 +1,5 @@
 package cuteguard.commands
 
-import cats.Show
 import cuteguard.*
 import cuteguard.Epoch.*
 import cuteguard.RelativeTime.given
@@ -11,6 +10,8 @@ import cuteguard.model.{Action, Event}
 import cuteguard.model.discord.User
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
 import cuteguard.utils.toEitherT
+
+import cats.Show
 import cats.data.EitherT
 import cats.effect.{IO, Ref}
 import cats.syntax.option.*
