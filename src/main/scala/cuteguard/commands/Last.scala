@@ -43,7 +43,7 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
       events    <- EitherT.liftF(events.list(user.some, None, action.some, None, "'last' command".some))
       mostRecent = events.maxByOption(_.date)
       emptyText  = s"${user.mention} has no ${action.plural} on record."
-      text       = mostRecent.fold(emptyText)(event => s"${user.mention} last $action was on ${dateText(event)}")
+      text       = mostRecent.fold(emptyText)(event => s"${user.mention} last $action was ${dateText(event)}")
     yield text
     eitherTResponse(response, slashAPI).void
 
