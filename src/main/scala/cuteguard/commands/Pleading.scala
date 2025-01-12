@@ -11,7 +11,7 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 case class Pleading(cooldown: Cooldown) extends TextCommand with NoChannelLog:
-  override def pattern: Regex = ".*(<a?:\\w*pleading\\w*:\\d+>|\uD83E\uDD7A).*".r
+  override def pattern: Regex = ".*(<a?:\\w*plead\\w*:\\d+>|\uD83E\uDD7A).*".r
 
   override def matches(event: MessageEvent): Boolean = pattern.matches(stripAccents(event.content.toLowerCase))
 
