@@ -38,10 +38,11 @@ case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
       _ <-
         EitherT.liftF(
           event.replyEphemeral(
-            s"The word with the highest score is `$word` with `$fitness` a points, ${config.threshold} is needed to " +
-              "be considered a smash.",
+            s"The word with the highest score is `$word` with `$fitness` a points, `${config.threshold}` is the " +
+              s"minimum score needed for text to be considered a subsmash.",
           ),
         )
     yield false
 
-  override val description: String = "Checks text for subsmashes and tells you the score of the word."
+  override val description: String =
+    "Checks text for subsmashes and tells you the score of the word with the highest score."
