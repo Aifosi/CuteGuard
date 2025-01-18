@@ -9,7 +9,6 @@ import cats.data.OptionT
 import cats.effect.IO
 import doobie.{Fragment, Transactor}
 import doobie.postgres.implicits.*
-import doobie.syntax.SqlInterpolator.SingleFragment
 import doobie.syntax.string.*
 
 import java.util.UUID

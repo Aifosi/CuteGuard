@@ -20,8 +20,6 @@ trait StreamSyntax:
     def whenA[F[_]](cond: Boolean)(action: => Stream[F, Unit]): Stream[F, Unit] =
       Applicative[[O] =>> Stream[F, O]].whenA(cond)(action)
 
-    // def println[A](a: A)(using S: Show[A] = Show.fromToString[A]): Stream[IO, Unit] = Stream.eval(IO.println(a))
-
   extension [F[_], O](stream: Stream[F, O])
     def handleErrorAndContinue[F2[x] >: F[x]](h: Throwable => Stream[F2, O]): Stream[F2, O] =
       stream.handleErrorWith(error => h(error) ++ stream.handleErrorAndContinue(h))

@@ -66,7 +66,7 @@ class SlashCommandEvent(
         case interactionHook              => interactionHook.retrieveOriginal.toIO.map(Message(_).some)
       }
 
-  inline def getOption[T](option: String)(using reader: OptionReader[T]): OptionResult[T] =
+  inline def getOption[T: OptionReader as reader](option: String): OptionResult[T] =
     MacroHelper.getOption[T](reader, underlying, option)
 
   lazy val allOptions: List[OptionMapping]     = underlying.getOptions.asScala.toList

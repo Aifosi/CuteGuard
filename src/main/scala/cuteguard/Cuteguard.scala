@@ -85,7 +85,7 @@ object Cuteguard extends IOApp.Simple:
       NotCute(cooldown),
       Pleading(cooldown),
       Subsmash(cooldown, fitness, discord, subsmashConfiguration),
-      WordFitness(fitness, subsmashConfiguration),
+      CheckSubsmash(fitness, subsmashConfiguration),
       ActionCommand(events, counterChannel, Action.Edge),
       ActionCommand(events, counterChannel, Action.Ruin),
       ActionCommand(events, counterChannel, Action.Orgasm),

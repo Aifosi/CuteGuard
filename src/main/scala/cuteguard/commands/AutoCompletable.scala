@@ -19,7 +19,7 @@ object AutoCompletable:
     def fromPure: Map[String, AutoCompleteEvent => IO[List[T]]]       =
       map.view.mapValues(_.andThen(IO.pure)).toMap
 
-trait AutoCompletable[T](using writer: OptionWriter[T]):
+trait AutoCompletable[T: OptionWriter as writer]:
   this: SlashCommand =>
 
   protected def autoCompleteOptionsGen: Map[String, AutoCompleteEvent => IO[List[T]]]

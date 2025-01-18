@@ -3,8 +3,7 @@ package cuteguard
 import cats.effect.IO
 import doobie.util.log.LogHandler
 import doobie.util.transactor.Transactor
-import pureconfig.*
-import pureconfig.generic.derivation.default.derived
+import pureconfig.ConfigReader
 
 final case class PostgresConfiguration(
   driver: String,

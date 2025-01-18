@@ -8,7 +8,7 @@ trait OptionWriter[T]:
   def contramap[TT](f: TT => T): OptionWriter[TT] = thing => apply(f(thing))
 
 object OptionWriter:
-  def apply[T](using writer: OptionWriter[T]) = writer
+  def apply[T: OptionWriter as writer] = writer
 
   def shouldNeverBeUsed[T](what: String): OptionWriter[T] = _ =>
     throw new Exception(s"Option Writter for $what is trying to be used!")
@@ -19,4 +19,4 @@ object OptionWriter:
   given OptionWriter[Boolean] = _.show
   given OptionWriter[String]  = identity(_)
 
-  given optionWritter[T](using writer: OptionWriter[T]): OptionWriter[Option[T]] = _.fold("")(writer.apply)
+  given [T: OptionWriter as writer] => OptionWriter[Option[T]] = _.fold("")(writer.apply)

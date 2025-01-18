@@ -9,7 +9,7 @@ trait OptionReader[T]:
     string => apply(string).flatMap(f)
 
 object OptionReader:
-  def apply[T](using reader: OptionReader[T]) = reader
+  def apply[T: OptionReader as reader] = reader
 
   def shouldNeverBeUsed[T](what: String): OptionReader[T] = _ =>
     throw new Exception(s"Option Reader for $what is trying to be used!")
@@ -22,7 +22,7 @@ object OptionReader:
   given OptionReader[Boolean] = string => string.toBooleanOption.toRight(error(string, "Boolean"))
   given OptionReader[String]  = Right(_)
 
-  given optionReader[T](using reader: OptionReader[T]): OptionReader[Option[T]] = {
+  given [T: OptionReader as reader] => OptionReader[Option[T]] = {
     case string: String if string.isBlank => Right(None)
     case string                           => reader(string).map(Some(_))
   }
