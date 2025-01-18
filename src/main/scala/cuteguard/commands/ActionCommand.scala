@@ -25,9 +25,6 @@ case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Ac
   override val description: String =
     s"Records a number of ${action.plural} you did, optionally add who gave them to you."
 
-  /** If set to false only admins can see it by default.
-    */
-  override val isUserCommand: Boolean       = true
   override val fullCommand: String          = action.show
   override val options: List[PatternOption] = List(
     _.addOption[Option[Int]]("amount", s"How many ${action.plural} did you do? Defaults to 1."),

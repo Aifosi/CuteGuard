@@ -38,7 +38,7 @@ abstract class ReactionCommand extends Command[String, ReactionEvent]:
 abstract class SlashCommand extends Command[SlashPattern, SlashCommandEvent]:
   /** If set to false only admins can see it by default.
     */
-  val isUserCommand: Boolean
+  val isUserCommand: Boolean = true
 
   val fullCommand: String
 

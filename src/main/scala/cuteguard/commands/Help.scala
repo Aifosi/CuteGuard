@@ -6,7 +6,6 @@ import cats.effect.IO
 import org.typelevel.log4cats.Logger
 
 class Help(commands: List[AnyCommand]) extends SlashCommand:
-  override val isUserCommand: Boolean = true
   override val fullCommand: String    = "help"
   override val description: String    = "Shows help for existing commands"
 

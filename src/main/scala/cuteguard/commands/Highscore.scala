@@ -18,9 +18,6 @@ import org.typelevel.log4cats.Logger
 import java.util.UUID
 
 case class Highscore(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
-  /** If set to false only admins can see it by default.
-    */
-  override val isUserCommand: Boolean                                                  = true
   override val fullCommand: String                                                     = "highscore"
   private val topDefault                                                               = 10
   override val options: List[PatternOption]                                            = List(

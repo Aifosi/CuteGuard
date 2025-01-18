@@ -12,9 +12,6 @@ import cats.effect.IO
 import org.typelevel.log4cats.Logger
 
 class EventEdit(events: Events, eventEditor: EventEditor) extends SlashCommand with Options with ErrorMessages:
-  /** If set to false only admins can see it by default.
-    */
-  override val isUserCommand: Boolean = true
   override val fullCommand: String    = "event edit"
 
   override val options: List[PatternOption] = List(

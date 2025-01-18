@@ -14,9 +14,6 @@ case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
 
   import fitness.*
 
-  /** If set to false only admins can see it by default.
-    */
-  override val isUserCommand: Boolean = true
   override val fullCommand: String    = "check subsmash"
 
   override val options: List[PatternOption] = List(
