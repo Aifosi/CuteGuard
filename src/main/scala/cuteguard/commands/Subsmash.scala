@@ -49,15 +49,14 @@ case class Subsmash(cooldown: Cooldown, fitness: Fitness, discord: Deferred[IO, 
 
 object Subsmash:
   extension (string: String)
-    private def sanitise: String =
+    def sanitise: String =
       stripAccents(string)                          // Remove diacritics
         .toLowerCase                                // to lowercase
         .replaceAll("https?://[^ ]+\\.[^ ]+", "")   // remove links
         .replaceAll("<a?:\\w+:\\d+>", "")           // remove emoji and links
         .replaceAll("`(:?``)?[^`]+`(:?``)?", "")    // remove code blocks
         .replaceAll("(\\w+)[^\\w ](\\w+)", "$1 $2") // remove word alternations
-        .replaceAll("(\\w)\\1+", "$1")              // remove single character repetitions
-        .replaceAll("(\\w\\w)\\1+", "$1")           // remove doube character repetitions
+        .replaceAll("(\\w+)\\1+", "$1") // remove single character repetitions
         .replaceAll("[^a-z \n]", "")                // Remove all symbols
 
   def best(fitness: Fitness, config: SubsmashConfiguration)(
