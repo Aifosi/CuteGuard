@@ -52,7 +52,8 @@ object Cuteguard extends IOApp.Simple:
     }
     .compile
     .toList
-    .map(_.toMap.withDefaultValue(0d))
+    // This makes it so if a quadgram is not found it's considered very unlikely in english
+    .map(_.toMap.withDefaultValue(10d))
     .flatMap(gramsDeferred.complete)
     .flatMap(_ => Logger[IO].info("Loaded Quadgrams"))
     .start
