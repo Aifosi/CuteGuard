@@ -8,7 +8,7 @@ class Fitness(quadgrams: Deferred[IO, Map[String, Double]]):
       case string if string.isBlank || string.length < gramLength => 0d
       case string                                                 =>
         val grams = string.sliding(gramLength).toList
-        grams.foldLeft(0d)((acc, gram) => acc + gramScores(gram)) / (string.length - grams.length)
+        grams.foldLeft(0d)((acc, gram) => acc + gramScores(gram)) / grams.length
 
     private def maxWordFitness(minLength: Int, gram: Int, map: Map[String, Double]): (String, Double) =
       val minGramLength = Math.max(minLength, gram)
