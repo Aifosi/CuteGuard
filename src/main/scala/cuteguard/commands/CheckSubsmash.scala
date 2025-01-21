@@ -14,7 +14,7 @@ case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
 
   import fitness.*
 
-  override val fullCommand: String    = "check subsmash"
+  override val fullCommand: String = "check subsmash"
 
   override val options: List[PatternOption] = List(
     _.addOption[String]("text", "Text to check for a subsmash."),
@@ -36,7 +36,7 @@ case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
         EitherT.liftF(
           event.replyEphemeral(
             s"The word with the highest score is `$word` with `$fitness` a points, `${config.threshold}` is the " +
-              s"minimum score needed for text to be considered a subsmash.",
+              "minimum score needed for text to be considered a subsmash.",
           ),
         )
     yield false

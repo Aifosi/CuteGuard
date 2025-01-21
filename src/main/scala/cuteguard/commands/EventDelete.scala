@@ -11,7 +11,7 @@ import cats.effect.IO
 import org.typelevel.log4cats.Logger
 
 case class EventDelete(events: Events, eventEditor: EventEditor) extends SlashCommand with Options with ErrorMessages:
-  override val fullCommand: String    = "event delete"
+  override val fullCommand: String = "event delete"
 
   override val options: List[PatternOption] = List(
     _.addOption[Int]("id", "Text action you want the total for."),

@@ -15,7 +15,7 @@ import org.typelevel.log4cats.Logger
 
 case class EventList(events: Events, eventEditor: EventEditor)
     extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
-  override val fullCommand: String    = "event list"
+  override val fullCommand: String = "event list"
 
   override val options: List[PatternOption]                                            = List(
     _.addOption[Action]("action", "Action you to list events for.", autoComplete = true),
