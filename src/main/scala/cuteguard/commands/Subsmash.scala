@@ -56,7 +56,7 @@ object Subsmash:
         .replaceAll("<a?:\\w+:\\d+>", "")           // remove emoji and links
         .replaceAll("`(:?``)?[^`]+`(:?``)?", "")    // remove code blocks
         .replaceAll("(\\w+)[^\\w ](\\w+)", "$1 $2") // remove word alternations
-        .replaceAll("(\\w+)\\1+", "$1") // remove single character repetitions
+        .replaceAll("(\\w+)\\1+", "$1")             // remove single character repetitions
         .replaceAll("[^a-z \n]", "")                // Remove all symbols
 
   def best(fitness: Fitness, config: SubsmashConfiguration)(
