@@ -18,11 +18,14 @@ class Fitness(quadgrams: Deferred[IO, Map[String, Double]]):
     private def maxWordFitness(minLength: Int, gram: Int, map: Map[String, Double]): (String, String, Double) =
       val minGramLength = Math.max(minLength, gram)
       string
-        .replaceAll("(\\w+)[^\\w ](\\w+)", "$1 $2") // remove word alternations
         .split("( |\n)")
-        .map { word =>
+        .flatMap { word =>
           val sanitised = word.sanitise
-          val score     = if sanitised.length >= minGramLength then sanitised.fitness(gram, map) else 0d
+          val split     = sanitised.split("( |\n)")
+          if split.length > 1 then split.map(word => word -> word.sanitise) else Array(word -> sanitised)
+        }
+        .map { (word, sanitised) =>
+          val score = if sanitised.length >= minGramLength then sanitised.fitness(gram, map) else 0d
           (word, sanitised, score)
         }
         .maxByOption(_(2))
@@ -36,12 +39,13 @@ class Fitness(quadgrams: Deferred[IO, Map[String, Double]]):
 object Fitness:
   extension (string: String)
     def sanitise: String =
-      stripAccents(string)                        // Remove diacritics
-        .toLowerCase                              // to lowercase
-        .replaceAll("https?://[^ ]+\\.[^ ]+", "") // remove links
-        .replaceAll("<a?:\\w+:\\d+>", "")         // remove emoji
-        .replaceAll("<sound:\\d+:\\d+>", "")      // remove sounds
-        .replaceAll("`(:?``)?[^`]+`(:?``)?", "")  // remove code blocks
-        .replaceAll("[^a-z \n]", "")              // Remove all symbols
-        .replaceAll("(\\w)\\1{2,}", "$1")         // remove triples or longer
+      stripAccents(string)                          // Remove diacritics
+        .toLowerCase                                // to lowercase
+        .replaceAll("https?://[^ ]+\\.[^ ]+", "")   // remove links
+        .replaceAll("<a?:\\w+:\\d+>", "")           // remove emoji
+        .replaceAll("<sound:\\d+:\\d+>", "")        // remove sounds
+        .replaceAll("`(:?``)?[^`]+`(:?``)?", "")    // remove code blocks
+        .replaceAll("(\\w+)[^\\w ](\\w+)", "$1 $2") // remove word alternations
+        .replaceAll("[^a-z \n]", "")                // Remove all symbols
+        .replaceAll("(\\w)\\1{2,}", "$1")           // remove triples or longer
         .replaceAll("(\\w{2,})\\1+", "$1") // remove word repetitions
