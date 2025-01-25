@@ -13,8 +13,13 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
-case class Subsmash(cooldown: Cooldown, fitness: Fitness, discord: Deferred[IO, Discord], config: SubsmashConfiguration)
-    extends TextCommand with NoChannelLog:
+case class Subsmash(
+  cooldown: Cooldown,
+  fitness: Fitness,
+  discord: Deferred[IO, Discord],
+  config: SubsmashConfiguration,
+  link: String,
+) extends TextCommand with NoChannelLog:
   import fitness.*
   override def pattern: Regex = ".*".r
 
@@ -32,8 +37,7 @@ case class Subsmash(cooldown: Cooldown, fitness: Fitness, discord: Deferred[IO, 
     _           <- resetActivity(activityName).start
     embed        = Embed(
                      s"${event.authorName}, use your words cutie",
-                     "https://cdn.discordapp.com/attachments/988232177265291324/1253319448954277949/nobottom.webp",
-                     "created by a sneaky totally not cute kitty",
+                     link,
                    )
     _           <- event.reply(embed)
   yield ()

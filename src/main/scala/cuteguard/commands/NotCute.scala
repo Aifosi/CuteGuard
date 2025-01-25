@@ -11,7 +11,7 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
-case class NotCute(cooldown: Cooldown) extends TextCommand with NoChannelLog:
+case class NotCute(cooldown: Cooldown, link: String) extends TextCommand with NoChannelLog:
   val n = "(?:n|🇳)"
   val o = "[o0\uD83C\uDDF4]"
   val t = "[t7\uD83C\uDDF9]"
@@ -35,8 +35,7 @@ case class NotCute(cooldown: Cooldown) extends TextCommand with NoChannelLog:
     lazy val embed = Embed(
       s"Lies - you're cute ${event.authorName}",
       "According to server rule 1, you are cute.\nJust accept it cutie! \uD83D\uDC9C",
-      "https://media.tenor.com/iESegr2Kb6MAAAAC/narpy-cute.gif",
-      "created by a sneaky totally not cute kitty",
+      link,
     )
     cooldown.interact(event.author)(Action.NotCute, event.reply(embed).void)
 

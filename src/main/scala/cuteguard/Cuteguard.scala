@@ -74,6 +74,7 @@ object Cuteguard extends IOApp.Simple:
 
   private def addCommands(
     subsmashConfiguration: SubsmashConfiguration,
+    links: LinkConfiguration,
     discord: Deferred[IO, Discord],
     quadgrams: Deferred[IO, Map[String, Double]],
     cooldown: Cooldown,
@@ -83,9 +84,9 @@ object Cuteguard extends IOApp.Simple:
   )(using Logger[IO]): Commander =
     val fitness                    = Fitness(quadgrams)
     val commands: List[AnyCommand] = List(
-      NotCute(cooldown),
-      Pleading(cooldown),
-      Subsmash(cooldown, fitness, discord, subsmashConfiguration),
+      NotCute(cooldown, links.notCute),
+      Pleading(cooldown, links.pleading),
+      Subsmash(cooldown, fitness, discord, subsmashConfiguration, links.subsmash),
       CheckSubsmash(fitness, subsmashConfiguration),
       ActionCommand(events, counterChannel, Action.Edge),
       ActionCommand(events, counterChannel, Action.Ruin),
@@ -124,7 +125,16 @@ object Cuteguard extends IOApp.Simple:
       cooldown       <- Cooldown(config.cooldown, events)
       eventEditor    <- EventEditor.apply
       commander       =
-        addCommands(config.subsmash, discordDeferred, gramsDeferred, cooldown, events, counterChannel, eventEditor)
+        addCommands(
+          config.subsmash,
+          config.links,
+          discordDeferred,
+          gramsDeferred,
+          cooldown,
+          events,
+          counterChannel,
+          eventEditor,
+        )
       given IORuntime = runtime
       messageListener = new MessageListener(commander)
       _              <- loadQuadgrams(gramsDeferred)

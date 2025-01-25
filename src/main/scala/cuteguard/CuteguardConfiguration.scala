@@ -15,10 +15,17 @@ case class SubsmashConfiguration(
   activityReset: FiniteDuration,
 ) derives ConfigReader
 
+case class LinkConfiguration(
+  subsmash: String,
+  pleading: String,
+  notCute: String,
+) derives ConfigReader
+
 case class CuteguardConfiguration(
   discord: DiscordConfiguration,
   postgres: PostgresConfiguration,
   subsmash: SubsmashConfiguration,
+  links: LinkConfiguration,
   cooldown: FiniteDuration,
   guildID: DiscordID,
   counterChannelID: DiscordID,
