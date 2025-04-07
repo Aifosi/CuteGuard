@@ -56,5 +56,5 @@ case class OptCommand(preferences: Preferences, out: Boolean)
                       }
       message       = if out then s"Cuteguard will no longer track or reply to your ${action.plural}!"
                       else s"Cuteguard will now once again track and reply to your ${action.plural}!"
-      _            <- EitherT.liftF(event.reply(message))
+      _            <- EitherT.liftF(event.replyEphemeral(message))
     yield true
