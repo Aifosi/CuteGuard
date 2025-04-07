@@ -1,7 +1,7 @@
 package cuteguard
 
 import cuteguard.commands.*
-import cuteguard.db.{DoobieLogHandler, Events, Users}
+import cuteguard.db.{DoobieLogHandler, Events, Preferences, Users}
 import cuteguard.model.Action
 import cuteguard.model.discord.{Channel, Discord}
 
@@ -81,12 +81,13 @@ object Cuteguard extends IOApp.Simple:
     events: Events,
     counterChannel: IO[Channel],
     eventEditor: EventEditor,
+    preferences: Preferences,
   )(using Logger[IO]): Commander =
     val fitness                    = Fitness(quadgrams)
     val commands: List[AnyCommand] = List(
-      NotCute(cooldown, links.notCute),
-      Pleading(cooldown, links.pleading),
-      Subsmash(cooldown, fitness, discord, subsmashConfiguration, links.subsmash),
+      NotCute(cooldown, preferences, links.notCute),
+      Pleading(cooldown, preferences, links.pleading),
+      Subsmash(cooldown, preferences, fitness, discord, subsmashConfiguration, links.subsmash),
       CheckSubsmash(fitness, subsmashConfiguration),
       ActionCommand(events, counterChannel, Action.Edge),
       ActionCommand(events, counterChannel, Action.Ruin),
@@ -99,6 +100,8 @@ object Cuteguard extends IOApp.Simple:
       EventList(events, eventEditor),
       EventDelete(events, eventEditor),
       EventEdit(events, eventEditor),
+      OptCommand(preferences, true),
+      OptCommand(preferences, false),
     )
 
     Commander(commands)
@@ -119,8 +122,9 @@ object Cuteguard extends IOApp.Simple:
       guild          = EitherT.liftF(discordDeferred.get).flatMap(_.guildByID(config.guildID))
       counterChannel = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.counterChannelID)).value.rethrow
 
-      users  = Users(guild)
-      events = Events(users)
+      users       = Users(guild)
+      events      = Events(users)
+      preferences = Preferences(users)
 
       cooldown       <- Cooldown(config.cooldown, events)
       eventEditor    <- EventEditor.apply
@@ -134,6 +138,7 @@ object Cuteguard extends IOApp.Simple:
           events,
           counterChannel,
           eventEditor,
+          preferences,
         )
       given IORuntime = runtime
       messageListener = new MessageListener(commander)

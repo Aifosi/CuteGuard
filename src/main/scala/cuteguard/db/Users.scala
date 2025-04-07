@@ -33,7 +33,7 @@ class Users(val guild: Maybe[Guild])(using Transactor[IO]) extends ModelReposito
       member,
     )
 
-  def add(user: DiscordUser, label: Option[String] = None): IO[CuteguardUser] =
+  def findOrAdd(user: DiscordUser, label: Option[String] = None): IO[CuteguardUser] =
     find(user.discordID.equalDiscordID)(label)
       .getOrElseF(insertOne(user.discordID)(columns*)(label))
 

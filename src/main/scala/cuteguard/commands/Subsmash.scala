@@ -3,6 +3,7 @@ package cuteguard.commands
 import cuteguard.{Fitness, SubsmashConfiguration}
 import cuteguard.Cooldown
 import cuteguard.Fitness.sanitise
+import cuteguard.db.Preferences
 import cuteguard.model.Action
 import cuteguard.model.discord.{Discord, Embed, Guild}
 import cuteguard.model.discord.event.MessageEvent
@@ -15,6 +16,7 @@ import scala.util.matching.Regex
 
 case class Subsmash(
   cooldown: Cooldown,
+  preferences: Preferences,
   fitness: Fitness,
   discord: Deferred[IO, Discord],
   config: SubsmashConfiguration,
@@ -43,12 +45,16 @@ case class Subsmash(
   yield ()
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
-    val members = Subsmash.memberNames(event.guild, event.authorName)
-    Subsmash.best(fitness, config)(event.content, members).flatMap {
+    val members     = Subsmash.memberNames(event.guild, event.authorName)
+    val interaction = Subsmash.best(fitness, config)(event.content, members).flatMap {
       case Some((_, _, fitnessScore)) if fitnessScore > config.threshold =>
-        cooldown.interact(event.author)(Action.Subsmash, sendReply(event))
-      case _                                                             => IO.pure(true)
+        cooldown.interact(event.author)(Action.Subsmash, sendReply(event)).void
+      case _                                                             => IO.unit
     }
+    for
+      optedOut <- preferences.find(event.author, Some("subsmash")).fold(false)(_.notCuteOptOut)
+      _        <- cooldown.interact(event.author)(Action.NotCute, IO.unlessA(optedOut)(interaction))
+    yield true
 
   override val description: String = "Responds when a user says they are not cute"
 

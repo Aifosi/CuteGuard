@@ -1,6 +1,7 @@
 package cuteguard.commands
 
 import cuteguard.Cooldown
+import cuteguard.db.Preferences
 import cuteguard.model.Action
 import cuteguard.model.discord.Embed
 import cuteguard.model.discord.event.MessageEvent
@@ -11,7 +12,7 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
-case class NotCute(cooldown: Cooldown, link: String) extends TextCommand with NoChannelLog:
+case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String) extends TextCommand with NoChannelLog:
   val n = "(?:n|🇳)"
   val o = "[o0\uD83C\uDDF4]"
   val t = "[t7\uD83C\uDDF9]"
@@ -37,6 +38,10 @@ case class NotCute(cooldown: Cooldown, link: String) extends TextCommand with No
       "According to server rule 1, you are cute.\nJust accept it cutie! \uD83D\uDC9C",
       link,
     )
-    cooldown.interact(event.author)(Action.NotCute, event.reply(embed).void)
+    for
+      optedOut   <- preferences.find(event.author, Some("not cute")).fold(false)(_.notCuteOptOut)
+      interaction = event.reply(embed).void
+      _          <- cooldown.interact(event.author)(Action.NotCute, IO.unlessA(optedOut)(interaction))
+    yield true
 
   override val description: String = "Responds when a user says they are not cute"

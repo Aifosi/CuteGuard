@@ -20,6 +20,7 @@ import org.typelevel.log4cats.Logger
 
 import java.time.{Instant, LocalDate}
 import java.util.UUID
+
 case class Event(
   id: UUID,
   receiverUserId: UUID,
@@ -62,8 +63,8 @@ class Events(val users: Users)(using Transactor[IO]) extends ModelRepository[Eve
     label: Option[String] = None,
   ): IO[CuteguardEvent] =
     for
-      receiver <- users.add(user, label)
-      issuer   <- giver.traverse(users.add(_, label))
+      receiver <- users.findOrAdd(user, label)
+      issuer   <- giver.traverse(users.findOrAdd(_, label))
       instant   = date.fold(Instant.now)(_.atStartOfDayUTC)
       event    <- insertOne((receiver.id, issuer.map(_.id), action, amount, instant))(columns*)(label)
     yield event
