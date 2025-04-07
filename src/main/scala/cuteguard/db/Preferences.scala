@@ -56,7 +56,10 @@ class Preferences(val users: Users)(using Transactor[IO])
     yield preferences
 
   def find(user: DiscordUser, label: Option[String] = None): OptionT[IO, CuteguardUserPreferences] =
-    super.find(user.discordID.equalDiscordID)(label)
+    for
+      user        <- OptionT.liftF(users.findOrAdd(user, label))
+      preferences <- super.find(user.id.equalUserID)(label)
+    yield preferences
 
   def update(
     id: UUID,
