@@ -11,7 +11,9 @@ sealed trait CanOpt:
   this: Action =>
 
 object CanOpt:
-  lazy val values: Array[Action & CanOpt] = Action.values.filter(_.isInstanceOf[Action & CanOpt]).asInstanceOf[Array[Action & CanOpt]]
+  lazy val values: Array[Action & CanOpt] = Action.values.collect { case canOpt: CanOpt =>
+    canOpt
+  }
 
   given OptionReader[Action & CanOpt] = OptionReader[Action].emap {
     case canOpt: CanOpt => canOpt.asRight

@@ -47,8 +47,7 @@ case class Subsmash(
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
     val members     = Subsmash.memberNames(event.guild, event.authorName)
     val interaction = Subsmash.best(fitness, config)(event.content, members).flatMap {
-      case Some((_, _, fitnessScore)) if fitnessScore > config.threshold =>
-        cooldown.interact(event.author)(Action.Subsmash, sendReply(event)).void
+      case Some((_, _, fitnessScore)) if fitnessScore > config.threshold => sendReply(event).void
       case _                                                             => IO.unit
     }
     for

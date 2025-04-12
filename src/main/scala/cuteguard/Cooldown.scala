@@ -15,7 +15,7 @@ class Cooldown(cooldownsRef: Ref[IO, Map[DiscordID, Instant]], cooldown: FiniteD
       cooldowns   <- cooldownsRef.get
       isOnCooldown = cooldowns.get(user.discordID).fold(false)(_.plusSeconds(cooldown.toSeconds).isAfter(Instant.now))
       addEvent     = events.add(user, None, action, 1, None)
-      _           <- addEvent *> IO.unlessA(isOnCooldown)(cooldownsRef.update(_ + (user.discordID -> Instant.now)) *> interaction)
+      _           <- addEvent *> IO.unlessA(isOnCooldown)(interaction *> cooldownsRef.update(_ + (user.discordID -> Instant.now)))
     yield isOnCooldown
 
 object Cooldown:

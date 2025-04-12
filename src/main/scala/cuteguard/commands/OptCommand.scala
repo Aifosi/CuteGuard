@@ -21,7 +21,7 @@ case class OptCommand(preferences: Preferences, out: Boolean)
   override val fullCommand: String          = s"opt ${if out then "out" else "in"}"
   override val options: List[PatternOption] = List(
     _.addOption[Action & CanOpt](
-      "what",
+      "action",
       s"What do you want to opt ${if out then "out of" else "in to"}?",
       autoComplete = true,
     ),
@@ -33,7 +33,7 @@ case class OptCommand(preferences: Preferences, out: Boolean)
 
   override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
     for
-      action       <- event.getOption[Action & CanOpt]("what").toEitherT
+      action       <- event.getOption[Action & CanOpt]("action").toEitherT
       preference   <- EitherT.liftF(preferences.find(event.author).value)
       label         = Some(if out then "opt out" else "opt in")
       addPreference = preferences.add(
