@@ -45,15 +45,18 @@ case class Subsmash(
   yield ()
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
-    val members     = Subsmash.memberNames(event.guild, event.authorName)
-    val interaction = Subsmash.best(fitness, config)(event.content, members).flatMap {
-      case Some((_, _, fitnessScore)) if fitnessScore > config.threshold => sendReply(event).void
-      case _                                                             => IO.unit
-    }
-    for
-      optedOut <- preferences.find(event.author, Some("subsmash")).fold(false)(_.notCuteOptOut)
-      _        <- cooldown.interact(event.author)(Action.NotCute, IO.unlessA(optedOut)(interaction))
-    yield true
+    val members = Subsmash.memberNames(event.guild, event.authorName)
+    List(
+      Subsmash.best(fitness, config)(event.content, members).map(_.exists(_(2) > config.threshold)),
+      cooldown.addEventAndCheckReady(event.author, Action.NotCute),
+      preferences.find(event.author, label = Some("subsmash")).fold(false)(_.notCuteOptOut),
+    ).foldLeft(IO.pure(true)) { case (acc, io) =>
+      acc.flatMap {
+        case false => IO.pure(false)
+        case true  => io
+      }
+    }.flatMap(IO.whenA(_)(sendReply(event)))
+      .as(true)
 
   override val description: String = "Responds when a user says they are not cute"
 

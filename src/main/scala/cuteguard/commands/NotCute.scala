@@ -38,10 +38,16 @@ case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String) e
       "According to server rule 1, you are cute.\nJust accept it cutie! \uD83D\uDC9C",
       link,
     )
-    for
-      optedOut   <- preferences.find(event.author, Some("not cute")).fold(false)(_.notCuteOptOut)
-      interaction = event.reply(embed).void
-      _          <- cooldown.interact(event.author)(Action.NotCute, IO.unlessA(optedOut)(interaction))
-    yield true
+
+    List(
+      cooldown.addEventAndCheckReady(event.author, Action.NotCute),
+      preferences.find(event.author, Some("not cute")).fold(false)(_.notCuteOptOut),
+    ).foldLeft(IO.pure(true)) { case (acc, io) =>
+      acc.flatMap {
+        case false => IO.pure(false)
+        case true  => io
+      }
+    }.flatMap(IO.whenA(_)(event.reply(embed).void))
+      .as(true)
 
   override val description: String = "Responds when a user says they are not cute"

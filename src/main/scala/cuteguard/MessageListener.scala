@@ -60,7 +60,7 @@ class MessageListener(
       guild  <- event.guild
       mention = if guild.isOwner(event.author) then event.author.accountName else event.author.mention
       _      <- IO.unlessA(ignoreChannel)(discordLogger.logToChannel(mention + message))
-      time    = show", command took ${nanos.nanos} secs to run."
+      time    = show", command took ${nanos.nanos} to run."
       _      <- Logger[IO].info(event.author.toString + message + time)
     yield ()
 

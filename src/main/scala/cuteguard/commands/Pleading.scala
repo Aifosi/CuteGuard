@@ -17,11 +17,17 @@ case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String) 
   override def matches(event: MessageEvent): Boolean = pattern.matches(stripAccents(event.content.toLowerCase))
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
-    for
-      optedOut   <- preferences.find(event.author, Some("pleading")).fold(false)(_.pleadingOptOut)
-      embed       = Embed(s"${event.authorName}, use your words cutie", link)
-      interaction = event.reply(embed).void
-      _          <- cooldown.interact(event.author)(Action.Pleading, IO.unlessA(optedOut)(interaction))
-    yield true
+    lazy val embed = Embed(s"${event.authorName}, use your words cutie", link)
+
+    List(
+      cooldown.addEventAndCheckReady(event.author, Action.Pleading),
+      preferences.find(event.author, Some("pleading")).fold(false)(_.pleadingOptOut),
+    ).foldLeft(IO.pure(true)) { case (acc, io) =>
+      acc.flatMap {
+        case false => IO.pure(false)
+        case true  => io
+      }
+    }.flatMap(IO.whenA(_)(event.reply(embed).void))
+      .as(true)
 
   override val description: String = "Responds when a user says they are not cute"

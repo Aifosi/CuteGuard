@@ -10,13 +10,16 @@ import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 
 class Cooldown(cooldownsRef: Ref[IO, Map[DiscordID, Instant]], cooldown: FiniteDuration, events: Events):
-  def interact(user: User)(action: Action, interaction: IO[Unit]): IO[Boolean] =
+  def addEventAndCheckReady(user: User, action: Action): IO[Boolean] =
     for
-      cooldowns   <- cooldownsRef.get
-      isOnCooldown = cooldowns.get(user.discordID).fold(false)(_.plusSeconds(cooldown.toSeconds).isAfter(Instant.now))
-      addEvent     = events.add(user, None, action, 1, None)
-      _           <- addEvent *> IO.unlessA(isOnCooldown)(interaction *> cooldownsRef.update(_ + (user.discordID -> Instant.now)))
-    yield isOnCooldown
+      cooldowns <- cooldownsRef.get
+      isReady    = !cooldowns.get(user.discordID).fold(false)(_.plusSeconds(cooldown.toSeconds).isAfter(Instant.now))
+      addEvent   = events.add(user, None, action, 1, None, label = Some(s"cooldown for ${action.show}"))
+      _         <- addEvent *> IO.whenA(isReady)(cooldownsRef.update(_ + (user.discordID -> Instant.now)))
+    yield isReady
+
+  def interact(user: User)(action: Action, interaction: IO[Unit]): IO[Boolean] =
+    addEventAndCheckReady(user, action).flatTap(IO.whenA(_)(interaction))
 
 object Cooldown:
   def apply(cooldown: FiniteDuration, events: Events): IO[Cooldown] =
