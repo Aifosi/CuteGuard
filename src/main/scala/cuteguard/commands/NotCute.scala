@@ -48,6 +48,7 @@ case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String) e
         case true  => io
       }
     }.flatMap(IO.whenA(_)(event.reply(embed).void))
+      .start
       .as(true)
 
   override val description: String = "Responds when a user says they are not cute"

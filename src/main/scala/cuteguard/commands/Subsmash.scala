@@ -56,6 +56,7 @@ case class Subsmash(
         case true  => io
       }
     }.flatMap(IO.whenA(_)(sendReply(event)))
+      .start
       .as(true)
 
   override val description: String = "Responds when a user says they are not cute"

@@ -28,6 +28,7 @@ case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String) 
         case true  => io
       }
     }.flatMap(IO.whenA(_)(event.reply(embed).void))
+      .start
       .as(true)
 
   override val description: String = "Responds when a user says they are not cute"
