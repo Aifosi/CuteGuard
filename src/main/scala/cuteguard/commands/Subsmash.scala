@@ -49,7 +49,7 @@ case class Subsmash(
     List(
       Subsmash.best(fitness, config)(event.content, members).map(_.exists(_(2) > config.threshold)),
       cooldown.addEventAndCheckReady(event.author, Action.NotCute),
-      preferences.find(event.author, label = Some("subsmash")).fold(false)(_.subsmashOptOut),
+      preferences.find(event.author, label = Some("subsmash")).fold(true)(!_.subsmashOptOut),
     ).foldLeft(IO.pure(true)) { case (acc, io) =>
       acc.flatMap {
         case false => IO.pure(false)

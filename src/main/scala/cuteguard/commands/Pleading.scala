@@ -21,7 +21,7 @@ case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String) 
 
     List(
       cooldown.addEventAndCheckReady(event.author, Action.Pleading),
-      preferences.find(event.author, Some("pleading")).fold(false)(_.pleadingOptOut),
+      preferences.find(event.author, Some("pleading")).fold(true)(!_.pleadingOptOut),
     ).foldLeft(IO.pure(true)) { case (acc, io) =>
       acc.flatMap {
         case false => IO.pure(false)
