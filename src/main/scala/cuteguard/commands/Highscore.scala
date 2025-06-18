@@ -33,8 +33,10 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
   ).fromSimplePure
 
   extension (int: Int)
-    def padWithThousandsSeparator(size: Int): String =
-      int.toString.grouped(3).mkString(" ").reverse.padTo(size, ' ').reverse
+    private def withThousandsSeparatorReverse: String = int.toString.reverse.grouped(3).mkString(" ")
+    def withThousandsSeparator: String                = withThousandsSeparatorReverse.reverse
+    def padWithThousandsSeparator(size: Int): String  =
+      withThousandsSeparatorReverse.padTo(size, ' ').reverse
 
   def highscoreText(
     topEvents: List[(((UUID, DiscordID), Int), Int)],
@@ -47,8 +49,8 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
       .flatMap(_.members(discordIDToUUIDs.keySet))
       .map { members =>
         val start            = s"Current highscore for **${action.show}**$daysText is:\n"
-        val maxTotalTextSize = topEvents.head(0)(1).toString.grouped(3).mkString(" ").length
-        val maxTextSize      = topEvents.size.toString.grouped(3).mkString(" ").length
+        val maxTotalTextSize = topEvents.head(0)(1).withThousandsSeparator.length
+        val maxTextSize      = topEvents.size.withThousandsSeparator.length
         val uuidToName       = members
           .map(member => discordIDToUUIDs(member.discordID) -> member.guildName)
           .toMap
