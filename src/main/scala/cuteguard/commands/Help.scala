@@ -15,6 +15,6 @@ class Help(commands: List[AnyCommand]) extends SlashCommand:
       case command: SlashCommand => command.isUserCommand
       case _                     => true
     }.map(command =>
-      s"**${if command.isInstanceOf[SlashCommand] then "\\" else ""}${command.pattern}** - ${command.description}",
+      s"**${if command.isInstanceOf[SlashCommand] then "/" else ""}${command.pattern}** - ${command.description}",
     )
     event.replyEphemeral(commandWithDescriptions.mkString("\n")).as(true)
