@@ -49,4 +49,4 @@ object Fitness:
         .replaceAll("(\\w+?)[^\\w ](\\w+?)", "$1 $2") // remove word alternations
         .replaceAll("[^a-z \n]", "")                  // Remove all symbols
         .replaceAll("(\\w)\\1{2,}", "$1")             // remove triples or longer
-        .replaceAll("(\\w{2,})?\\1+", "$1") // remove word repetitions
+        .replaceAll("(\\w{2,}?)\\1+", "$1") // remove word repetitions
