@@ -11,7 +11,8 @@ import org.apache.commons.lang3.StringUtils.stripAccents
 import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
-case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String) extends TextCommand with NoChannelLog:
+case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String)
+    extends TextCommand with NoChannelLog with Hidden:
   override def pattern: Regex = ".*(<a?:\\w*plead\\w*:\\d+>|\uD83E\uDD7A).*".r
 
   override def matches(event: MessageEvent): Boolean = pattern.matches(stripAccents(event.content.toLowerCase))
@@ -30,5 +31,3 @@ case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String) 
     }.flatMap(IO.whenA(_)(event.reply(embed).void))
       .start
       .as(true)
-
-  override val description: String = "Responds when a user says they are not cute"

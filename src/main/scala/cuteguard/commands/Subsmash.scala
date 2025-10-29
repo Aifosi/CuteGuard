@@ -21,7 +21,7 @@ case class Subsmash(
   discord: Deferred[IO, Discord],
   config: SubsmashConfiguration,
   link: String,
-) extends TextCommand with NoChannelLog:
+) extends TextCommand with NoChannelLog with Hidden:
   import fitness.*
   override def pattern: Regex = ".*".r
 
@@ -58,8 +58,6 @@ case class Subsmash(
     }.flatMap(IO.whenA(_)(sendReply(event)))
       .start
       .as(true)
-
-  override val description: String = "Responds when a user says they are not cute"
 
 object Subsmash:
   def memberNames(guild: IO[Guild], author: String): IO[Set[String]] =

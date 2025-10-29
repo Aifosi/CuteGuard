@@ -18,10 +18,10 @@ class Fitness(quadgrams: Deferred[IO, Map[String, Double]]):
     private def maxWordFitness(minLength: Int, gram: Int, map: Map[String, Double]): (String, String, Double) =
       val minGramLength = Math.max(minLength, gram)
       string
-        .split("( |\n)")
+        .split("([ \n])")
         .flatMap { word =>
           val sanitised = word.sanitise
-          val split     = sanitised.split("( |\n)")
+          val split     = sanitised.split("([ \n])")
           if split.length > 1 then split.map(word => word -> word.sanitise) else Array(word -> sanitised)
         }
         .map { (word, sanitised) =>
@@ -49,4 +49,4 @@ object Fitness:
         .replaceAll("(\\w+?)[^\\w ](\\w+?)", "$1 $2") // remove word alternations
         .replaceAll("[^a-z \n]", "")                  // Remove all symbols
         .replaceAll("(\\w)\\1{2,}", "$1")             // remove triples or longer
-        .replaceAll("(\\w{2,})\\1+", "$1") // remove word repetitions
+        .replaceAll("(\\w{2,})?\\1+", "$1") // remove word repetitions

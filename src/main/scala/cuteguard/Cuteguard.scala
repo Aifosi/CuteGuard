@@ -13,6 +13,7 @@ import doobie.util.transactor.Transactor
 import fs2.io.file.{Files, Path}
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.MemberCachePolicy
 import org.flywaydb.core.Flyway
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -30,6 +31,7 @@ object Cuteguard extends IOApp.Simple:
     val acquire = IO {
       JDABuilder
         .createDefault(token)
+        .setMemberCachePolicy(MemberCachePolicy.ALL)
         .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
         .addEventListeners(messageListener)
         .build()

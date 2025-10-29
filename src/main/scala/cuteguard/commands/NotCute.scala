@@ -12,7 +12,8 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
-case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String) extends TextCommand with NoChannelLog:
+case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String)
+    extends TextCommand with NoChannelLog with Hidden:
   val n = "(?:n|🇳)"
   val o = "[o0\uD83C\uDDF4]"
   val t = "[t7\uD83C\uDDF9]"
@@ -50,5 +51,3 @@ case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String) e
     }.flatMap(IO.whenA(_)(event.reply(embed).void))
       .start
       .as(true)
-
-  override val description: String = "Responds when a user says they are not cute"
