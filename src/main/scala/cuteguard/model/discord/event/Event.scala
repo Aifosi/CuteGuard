@@ -15,12 +15,12 @@ abstract class Event(
   jdaMember: Option[JDAMember],
   jdaGuild: Option[JDAGuild],
 ):
-  lazy val guild: IO[Guild]              = IO.fromOption(jdaGuild.map(new Guild(_)))(new Exception("Failed to get guild of event"))
+  lazy val guild: Option[Guild]          = jdaGuild.map(new Guild(_))
   lazy val author: User                  = new User(jdaAuthor)
   lazy val authorMember: IO[Member]      =
     OptionT
       .fromOption[IO](jdaMember.map(new Member(_)))
-      .orElse(OptionT.liftF(guild).flatMap(author.member))
+      .orElse(OptionT.fromOption[IO](guild).flatMap(author.member))
       .value
       .flatMap(IO.fromOption(_)(new Exception("Failed to get member of event")))
   lazy val channel: Channel              = new Channel(jdaChannel)

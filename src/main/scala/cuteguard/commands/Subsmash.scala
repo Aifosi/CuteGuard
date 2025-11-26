@@ -9,6 +9,7 @@ import cuteguard.model.discord.{Discord, Embed, Guild}
 import cuteguard.model.discord.event.MessageEvent
 
 import cats.effect.*
+import cats.syntax.traverse.*
 import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
@@ -58,10 +59,9 @@ case class Subsmash(
       .as(true)
 
 object Subsmash:
-  def memberNames(guild: IO[Guild], author: String): IO[Set[String]] =
+  def memberNames(guild: Option[Guild], author: String): IO[Set[String]] =
     for
-      guild      <- guild
-      members    <- guild.members.compile.toList
+      members    <- guild.toList.flatTraverse(_.members.compile.toList)
       memberNames = members.flatMap(_.guildName.sanitise.split(" ")).toSet.filter(_.length >= 4) - author.sanitise
     yield memberNames
 

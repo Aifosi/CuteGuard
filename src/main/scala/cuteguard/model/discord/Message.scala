@@ -2,6 +2,7 @@ package cuteguard.model.discord
 
 import cuteguard.syntax.action.*
 
+import cats.data.OptionT
 import cats.effect.IO
 import cats.instances.list.*
 import cats.syntax.foldable.*
@@ -15,7 +16,13 @@ class Message(private[model] val message: JDAMessage):
   lazy val id: DiscordID           = DiscordID(message.getIdLong)
   lazy val jumpUrl: String         = message.getJumpUrl
 
-  def author: Member = Member(message.getMember)
+  lazy val author: User = User(message.getAuthor)
+
+  def authorMember(guild: Guild): OptionT[IO, Member] =
+    OptionT
+      .fromOption[IO](Option(message.getMember).map(Member(_)))
+      .orElse(guild.member(author).toOption)
+  def authorNameInGuild(guild: Guild): IO[String]     = authorMember(guild).map(_.nameInGuild).getOrElse(author.accountName)
 
   def addReactions(reactions: String*): IO[Unit]                 =
     reactions.toList.map(Emoji.fromFormatted).traverse_(reaction => message.addReaction(reaction).toIO)
