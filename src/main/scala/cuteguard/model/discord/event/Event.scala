@@ -1,6 +1,5 @@
 package cuteguard.model.discord.event
 
-import cuteguard.model.discord.*
 import cuteguard.model.discord.{Channel, Discord, Guild, Member, Message, User}
 
 import cats.data.OptionT

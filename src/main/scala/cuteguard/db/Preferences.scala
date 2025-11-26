@@ -8,6 +8,7 @@ import cuteguard.utils.Maybe
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import doobie.{Fragment, Transactor}
+import doobie.Read
 import doobie.postgres.implicits.*
 import doobie.syntax.SqlInterpolator.SingleFragment
 import doobie.syntax.string.*
@@ -20,7 +21,7 @@ case class UserPreferences(
   pleadingOptOut: Boolean,
   subsmashOptOut: Boolean,
   notCuteOptOut: Boolean,
-)
+) derives Read
 
 class Preferences(val users: Users)(using Transactor[IO])
     extends ModelRepository[UserPreferences, CuteguardUserPreferences]:

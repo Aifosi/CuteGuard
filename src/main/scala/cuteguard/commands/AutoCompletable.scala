@@ -6,8 +6,6 @@ import cuteguard.syntax.string.*
 
 import cats.effect.IO
 
-import scala.compiletime.{asMatchable, erasedValue}
-
 object AutoCompletable:
   extension [T](map: Map[String, List[T]])
     def fromSimplePure: Map[String, AutoCompleteEvent => IO[List[T]]] =
@@ -40,7 +38,7 @@ trait AutoCompletable[T: OptionWriter as writer]:
 
   def apply(event: AutoCompleteEvent): IO[Boolean]
 
-trait AutoComplete[T: OptionWriter] extends AutoCompletable[T]:
+trait AutoComplete[T] extends AutoCompletable[T]:
   this: SlashCommand =>
 
   val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[T]]]

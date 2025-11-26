@@ -8,6 +8,7 @@ import cuteguard.utils.Maybe
 import cats.data.OptionT
 import cats.effect.IO
 import doobie.{Fragment, Transactor}
+import doobie.Read
 import doobie.postgres.implicits.*
 import doobie.syntax.string.*
 
@@ -16,7 +17,7 @@ import java.util.UUID
 case class User(
   id: UUID,
   discordID: DiscordID,
-)
+) derives Read
 
 class Users(val guild: Maybe[Guild])(using Transactor[IO]) extends ModelRepository[User, CuteguardUser]:
   override protected val table: Fragment = fr"users"

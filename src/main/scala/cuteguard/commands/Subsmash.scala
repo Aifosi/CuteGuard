@@ -9,7 +9,6 @@ import cuteguard.model.discord.{Discord, Embed, Guild}
 import cuteguard.model.discord.event.MessageEvent
 
 import cats.effect.*
-import cats.instances.option.*
 import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
@@ -22,7 +21,6 @@ case class Subsmash(
   config: SubsmashConfiguration,
   link: String,
 ) extends TextCommand with NoChannelLog with Hidden:
-  import fitness.*
   override def pattern: Regex = ".*".r
 
   private def resetActivity(name: String) = for

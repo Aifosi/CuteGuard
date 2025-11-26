@@ -2,7 +2,6 @@ package cuteguard.commands
 
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
-import cuteguard.mapping.OptionWriter
 import cuteguard.model.Action
 import cuteguard.model.discord.DiscordID
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
@@ -85,7 +84,7 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
                     .view
                     .mapValues(_.map(_(2)).sum)
                     .toList
-                    .sortBy(_(1))(Ordering[Int].reverse)
+                    .sortBy(_(1))(using Ordering[Int].reverse)
                     .when(top > 0)(_.take(top))
                     .zipWithIndex
 

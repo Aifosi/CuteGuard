@@ -42,7 +42,7 @@ trait Insert[DB: Read]:
     Update[Info](sql(columns*), None, label.getOrElse(unlabeled))
       .updateManyWithGeneratedKeys[DB](this.allColumns*)(info)
 
-trait Remove[DB: Read]:
+trait Remove[DB]:
   this: Repository[DB] =>
   protected val table: Fragment
 

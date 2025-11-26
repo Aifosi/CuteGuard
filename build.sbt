@@ -1,6 +1,6 @@
 name := "CuteGuard"
 
-val scala3Version = "3.6.2"
+val scala3Version = "3.7.4"
 ThisBuild / scalaVersion := scala3Version
 
 // Used for scala fix
@@ -54,7 +54,7 @@ Universal / mappings               ++= Seq(
 
 Docker / dockerRepository := Some("aifosi")
 dockerUpdateLatest        := true
-dockerBaseImage           := "openjdk:17-jdk"
+dockerBaseImage           := "eclipse-temurin:25-jre"
 publish / skip            := false
 dockerBuildOptions        += "--platform=linux/amd64"
 
@@ -93,20 +93,20 @@ libraryDependencies ++= Seq(
   doobiePostgres,
 )
 
-lazy val apacheLang     = "org.apache.commons"     % "commons-lang3"              % "3.17.0"
-lazy val catsEffect     = "org.typelevel"         %% "cats-effect"                % "3.5.7"
-lazy val circe          = "io.circe"              %% "circe-core"                 % "0.14.10"
+lazy val apacheLang     = "org.apache.commons"     % "commons-lang3"              % "3.20.0"
+lazy val catsEffect     = "org.typelevel"         %% "cats-effect"                % "3.6.3"
+lazy val circe          = "io.circe"              %% "circe-core"                 % "0.14.15"
 lazy val circeParser    = circe.organization      %% "circe-parser"               % circe.revision
 lazy val catsRetry      = "com.github.cb372"      %% "cats-retry"                 % "4.0.0"
-lazy val fs2            = "co.fs2"                %% "fs2-core"                   % "3.11.0"
+lazy val fs2            = "co.fs2"                %% "fs2-core"                   % "3.12.2"
 lazy val fs2IO          = fs2.organization        %% "fs2-io"                     % fs2.revision
-lazy val jda            = "net.dv8tion"            % "JDA"                        % "5.2.2"
-lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"             % "2.7.0"
-lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"            % "1.5.16"
-lazy val pureconfig     = "com.github.pureconfig" %% "pureconfig-core"            % "0.17.8"
+lazy val jda            = "net.dv8tion"            % "JDA"                        % "6.1.2"
+lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"             % "2.7.1"
+lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"            % "1.5.21"
+lazy val pureconfig     = "com.github.pureconfig" %% "pureconfig-core"            % "0.17.9"
 lazy val pureconfigCE   = pureconfig.organization %% "pureconfig-cats-effect"     % pureconfig.revision
-lazy val postgres       = "org.postgresql"         % "postgresql"                 % "42.7.5"
-lazy val flyway         = "org.flywaydb"           % "flyway-core"                % "11.2.0"
+lazy val postgres       = "org.postgresql"         % "postgresql"                 % "42.7.8"
+lazy val flyway         = "org.flywaydb"           % "flyway-core"                % "11.17.2"
 lazy val flywayPostgres = flyway.organization      % "flyway-database-postgresql" % flyway.revision
-lazy val doobie         = "org.tpolecat"          %% "doobie-core"                % "1.0.0-RC5"
+lazy val doobie         = "org.tpolecat"          %% "doobie-core"                % "1.0.0-RC11"
 lazy val doobiePostgres = doobie.organization     %% "doobie-postgres"            % doobie.revision

@@ -62,8 +62,8 @@ class SlashCommandEvent(
       .setEphemeral(ephemeral)
       .toIO
       .flatMap {
-        case interactionHook if ephemeral => IO.pure(None)
-        case interactionHook              => interactionHook.retrieveOriginal.toIO.map(Message(_).some)
+        case _ if ephemeral  => IO.pure(None)
+        case interactionHook => interactionHook.retrieveOriginal.toIO.map(Message(_).some)
       }
 
   inline def getOption[T: OptionReader as reader](option: String): OptionResult[T] =

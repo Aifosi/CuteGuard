@@ -103,6 +103,7 @@ object Cuteguard extends IOApp.Simple:
       EventEdit(events, eventEditor),
       OptCommand(preferences, true),
       OptCommand(preferences, false),
+      Quote(quoteChannel),
     )
 
     Commander(commands)

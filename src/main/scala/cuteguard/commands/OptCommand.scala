@@ -5,7 +5,6 @@ import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Preferences
 import cuteguard.model.{Action, CanOpt}
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashCommandEvent}
-import cuteguard.syntax.localdate.*
 import cuteguard.utils.toEitherT
 
 import cats.data.EitherT

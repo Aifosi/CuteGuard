@@ -9,7 +9,7 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.Read
 
-trait ThoroughList[DB: Read, Model, ID]:
+trait ThoroughList[DB, Model, ID]:
   this: ModelRepository[DB, Model] =>
   def id(db: DB): ID
   def thoroughList(filters: Filter*)(label: Option[String]): IO[List[Either[ID, Model]]] =

@@ -1,8 +1,5 @@
 package cuteguard.commands
 
-import cuteguard.mapping.OptionWriter
-
-import cats.syntax.option.*
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 import net.dv8tion.jda.api.interactions.commands.build.{Commands, SlashCommandData, SubcommandData, SubcommandGroupData}
 
@@ -15,7 +12,7 @@ case class SlashPattern(
   commandOptions: List[SlashCommandData => SlashCommandData] = List.empty,
   subCommandOptions: List[SubcommandData => SubcommandData] = List.empty,
 ):
-  inline def addOption[T: OptionWriter](
+  inline def addOption[T](
     name: String,
     description: String,
     autoComplete: Boolean = false,
@@ -23,7 +20,7 @@ case class SlashPattern(
     subCommand.fold {
       val option: SlashCommandData => SlashCommandData = MacroHelper.addOption[T](_, name, description, autoComplete)
       copy(commandOptions = commandOptions :+ option)
-    } { subCommand =>
+    } { _ =>
       val option: SubcommandData => SubcommandData =
         MacroHelper.addSubCommandOption[T](_, name, description, autoComplete)
       copy(subCommandOptions = subCommandOptions :+ option)
@@ -54,7 +51,7 @@ object SlashPattern:
 
         other
           .foldLeft(command) {
-            case (command, (None, other))                                              =>
+            case (command, (None, other))                                        =>
               other.foldLeft(command) {
                 case (command, (None, _))                             => command
                 case (command, (Some(subCommandName), List(pattern))) =>
@@ -65,9 +62,9 @@ object SlashPattern:
 
                 case _ => throw new Exception("Unexpected number of patterns")
               }
-            case (command, (Some(subCommandGroupName), other)) if other.contains(None) =>
+            case (_, (Some(subCommandGroupName), other)) if other.contains(None) =>
               throw new Exception(s"$commandName $subCommandGroupName has no subCommands")
-            case (command, (Some(subCommandGroupName), other))                         =>
+            case (command, (Some(subCommandGroupName), other))                   =>
               // Commands with subCommandGroup and subCommand
               val subcommandGroup = other.view.collect { case (Some(subCommandName), other) => subCommandName -> other }
                 .foldLeft(new SubcommandGroupData(subCommandGroupName, "No description")) {

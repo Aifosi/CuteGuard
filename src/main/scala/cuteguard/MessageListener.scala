@@ -1,7 +1,7 @@
 package cuteguard
 
 import cuteguard.DurationShow.given
-import cuteguard.commands.{AutoCompletable, NoChannelLog, PatternCommand}
+import cuteguard.commands.{NoChannelLog, PatternCommand}
 import cuteguard.model.discord.event.{
   AutoCompleteEvent,
   Event,

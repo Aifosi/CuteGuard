@@ -11,6 +11,7 @@ import cats.effect.IO
 import cats.instances.option.*
 import cats.syntax.traverse.*
 import doobie.{Fragment, Transactor}
+import doobie.Read
 import doobie.postgres.implicits.*
 import doobie.syntax.SqlInterpolator.SingleFragment
 import doobie.syntax.connectionio.*
@@ -28,7 +29,7 @@ case class Event(
   action: Action,
   amount: Int,
   date: Instant,
-)
+) derives Read
 
 class Events(val users: Users)(using Transactor[IO]) extends ModelRepository[Event, CuteguardEvent]:
   override protected val table: Fragment = fr"events"

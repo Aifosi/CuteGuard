@@ -5,7 +5,6 @@ import cuteguard.Epoch.*
 import cuteguard.RelativeTime.given
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
-import cuteguard.mapping.OptionWriter
 import cuteguard.model.{Action, Event}
 import cuteguard.model.discord.User
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}

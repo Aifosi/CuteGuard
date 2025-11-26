@@ -2,7 +2,6 @@ package cuteguard.commands
 
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
-import cuteguard.mapping.OptionWriter
 import cuteguard.model.Action
 import cuteguard.model.discord.User
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}

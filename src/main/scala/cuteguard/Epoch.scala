@@ -16,7 +16,7 @@ opaque type RelativeTime  = Long
 object Epoch:
   given Show[Epoch] = Show.show(long => s"<t:$long>")
 
-  extension (instant: Instant) def toEpoch: Long = Epoch(instant)
+  extension (instant: Instant) def toEpoch: Epoch = Epoch(instant)
 
   def apply(instant: Instant): Epoch = instant.getEpochSecond
 

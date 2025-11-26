@@ -2,7 +2,6 @@ package cuteguard.commands
 
 import cuteguard.{Fitness, SubsmashConfiguration}
 import cuteguard.model.discord.event.SlashCommandEvent
-import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
 import cats.data.EitherT
@@ -11,8 +10,6 @@ import org.typelevel.log4cats.Logger
 
 case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
     extends SlashCommand with Options with ErrorMessages:
-
-  import fitness.*
 
   override val fullCommand: String = "check subsmash"
 
