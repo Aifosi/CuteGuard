@@ -18,10 +18,8 @@ import org.flywaydb.core.Flyway
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications
-// .commands&permissions=18432
-//https://discord.com/oauth2/authorize?client_id=990221153203281950&scope=bot%20applications
-// .commands&permissions=18432 - Test
+//https://discord.com/api/oauth2/authorize?client_id=1207778654260822045&scope=bot+applications.commands&permissions=18432
+//https://discord.com/oauth2/authorize?client_id=990221153203281950&scope=bot%20applications.commands&permissions=18432 - Test
 object Cuteguard extends IOApp.Simple:
   private def acquireDiscordClient(
     discordDeferred: Deferred[IO, Discord],
@@ -81,9 +79,10 @@ object Cuteguard extends IOApp.Simple:
     quadgrams: Deferred[IO, Map[String, Double]],
     cooldown: Cooldown,
     events: Events,
+    preferences: Preferences,
     counterChannel: IO[Channel],
     eventEditor: EventEditor,
-    preferences: Preferences,
+    quoteChannel: IO[Channel],
   )(using Logger[IO]): Commander =
     val fitness                    = Fitness(quadgrams)
     val commands: List[AnyCommand] = List(
@@ -123,6 +122,7 @@ object Cuteguard extends IOApp.Simple:
 
       guild          = EitherT.liftF(discordDeferred.get).flatMap(_.guildByID(config.guildID))
       counterChannel = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.counterChannelID)).value.rethrow
+      quoteChannel   = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.quoteChannelID)).value.rethrow
 
       users       = Users(guild)
       events      = Events(users)
@@ -138,9 +138,10 @@ object Cuteguard extends IOApp.Simple:
           gramsDeferred,
           cooldown,
           events,
+          preferences,
           counterChannel,
           eventEditor,
-          preferences,
+          quoteChannel,
         )
       given IORuntime = runtime
       messageListener = new MessageListener(commander)

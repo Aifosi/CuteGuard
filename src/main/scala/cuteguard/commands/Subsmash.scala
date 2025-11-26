@@ -34,18 +34,18 @@ case class Subsmash(
 
   private def sendReply(event: MessageEvent) = for
     discord     <- discord.get
-    activityName = s"Tormenting ${event.authorName}"
+    activityName = s"Tormenting ${event.memberName}"
     _           <- discord.activity(activityName).attempt
     _           <- resetActivity(activityName).start
     embed        = Embed(
-                     s"${event.authorName}, use your words cutie",
+                     s"${event.memberName}, use your words cutie",
                      link,
                    )
     _           <- event.reply(embed)
   yield ()
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
-    val members = Subsmash.memberNames(event.guild, event.authorName)
+    val members = Subsmash.memberNames(event.guild, event.memberName)
     List(
       Subsmash.best(fitness, config)(event.content, members).map(_.exists(_(2) > config.threshold)),
       cooldown.addEventAndCheckReady(event.author, Action.NotCute),

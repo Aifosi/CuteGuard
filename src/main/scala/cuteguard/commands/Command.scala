@@ -1,7 +1,14 @@
 package cuteguard.commands
 
 import cuteguard.Named
-import cuteguard.model.discord.event.{Event, MessageEvent, ReactionEvent, SlashCommandEvent}
+import cuteguard.model.discord.event.{
+  Event,
+  InteractionEvent,
+  MessageEvent,
+  MessageInteractionEvent,
+  ReactionEvent,
+  SlashCommandEvent,
+}
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -9,33 +16,35 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 
-object Command:
+object PatternCommand:
   val all = ".+".r
 
-type AnyCommand = Command[?, ? <: Event]
+type AnyCommand        = Command[? <: Event]
+type AnyPatternCommand = PatternCommand[?, ? <: Event]
 
-sealed abstract class Command[T, E <: Event] extends Named:
+sealed abstract class Command[E <: Event] extends Named:
+  override def toString: String = className
+
+  def matches(event: E): Boolean
+
+sealed abstract class PatternCommand[T, E <: Event] extends Command[E]:
   def pattern: T
 
   def apply(pattern: T, event: E)(using Logger[IO]): IO[Boolean]
 
   val description: String
 
-  override def toString: String = className
-
-  def matches(event: E): Boolean
-
-abstract class TextCommand extends Command[Regex, MessageEvent]:
+abstract class TextCommand extends PatternCommand[Regex, MessageEvent]:
   override def matches(event: MessageEvent): Boolean = pattern.matches(event.content)
 
 object TextCommand:
   val any: Regex         = ".+".r
   val userMention: Regex = "<@!(\\d+)>".r
 
-abstract class ReactionCommand extends Command[String, ReactionEvent]:
+abstract class ReactionCommand extends PatternCommand[String, ReactionEvent]:
   override def matches(event: ReactionEvent): Boolean = pattern == event.content
 
-abstract class SlashCommand extends Command[SlashPattern, SlashCommandEvent]:
+abstract class SlashCommand extends PatternCommand[SlashPattern, SlashCommandEvent]:
   /** If set to false only admins can see it by default.
     */
   val isUserCommand: Boolean = true
@@ -64,3 +73,12 @@ trait ErrorMessages:
 
   override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
     run(pattern, event).leftSemiflatMap(event.replyEphemeral(_).as(true)).merge
+
+sealed abstract class InteractionCommand[E <: InteractionEvent] extends Command[E]:
+  def name: String
+
+  override def matches(event: E): Boolean = event.name.equalsIgnoreCase(name)
+
+  def apply(event: E)(using Logger[IO]): IO[Boolean]
+
+abstract class MessageInteractionCommand extends InteractionCommand[MessageInteractionEvent]

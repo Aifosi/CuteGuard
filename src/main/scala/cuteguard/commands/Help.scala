@@ -10,7 +10,9 @@ class Help(commands: List[AnyCommand]) extends SlashCommand:
   override val description: String = "Shows help for existing commands"
 
   override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
-    val commandWithDescriptions = commands.filter {
+    val commandWithDescriptions = commands.collect { case patternCommand: PatternCommand[?, ?] =>
+      patternCommand
+    }.filter {
       case _: Hidden             => false
       case command: SlashCommand => command.isUserCommand
       case _                     => true

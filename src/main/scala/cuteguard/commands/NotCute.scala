@@ -35,7 +35,7 @@ case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String)
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
     lazy val embed = Embed(
-      s"Lies - you're cute ${event.authorName}",
+      s"Lies - you're cute ${event.memberName}",
       "According to server rule 1, you are cute.\nJust accept it cutie! \uD83D\uDC9C",
       link,
     )

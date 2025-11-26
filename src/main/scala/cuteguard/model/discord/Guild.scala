@@ -12,7 +12,7 @@ import cats.syntax.either.*
 import fs2.Stream
 import net.dv8tion.jda.api.entities.{Guild as JDAGuild, User as JDAUser}
 import net.dv8tion.jda.api.interactions.commands.Command as JDACommand
-import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
+import net.dv8tion.jda.api.interactions.commands.build.CommandData
 
 import scala.compiletime.asMatchable
 import scala.jdk.CollectionConverters.*
@@ -45,7 +45,7 @@ class Guild(private[model] val guild: JDAGuild):
         .map(_.leftMap(_ => new Exception(s"Failed to get members using: $userDiscordIDs")))
     }
 
-  def addCommands(commands: List[SlashCommandData]): IO[List[DiscordID]] =
+  def addCommands(commands: List[CommandData]): IO[List[DiscordID]] =
     guild
       .updateCommands()
       .addCommands(commands*)

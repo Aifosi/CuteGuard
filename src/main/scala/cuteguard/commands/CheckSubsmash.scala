@@ -24,7 +24,7 @@ case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
     for
       text <- event.getOption[String]("text").toEitherT
 
-      memberNames = Subsmash.memberNames(event.guild, event.authorName)
+      memberNames = Subsmash.memberNames(event.guild, event.memberName)
 
       (word, sanitised, fitnessScore) <- EitherT(
                                            Subsmash

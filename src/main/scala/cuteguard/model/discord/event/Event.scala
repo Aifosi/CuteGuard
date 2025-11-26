@@ -27,6 +27,7 @@ abstract class Event(
   lazy val channel: Channel         = new Channel(jdaChannel)
   lazy val fromBot: Boolean         = author.isBot
   lazy val discord: Discord         = new Discord(jdaAuthor.getJDA)
+  lazy val authorName: String       = jdaAuthor.getName
 
   def reply(string: String): IO[Message]      = channel.sendMessage(string)
   def reply(embed: MessageEmbed): IO[Message] = channel.sendEmbed(embed)

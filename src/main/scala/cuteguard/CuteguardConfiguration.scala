@@ -29,6 +29,7 @@ case class CuteguardConfiguration(
   cooldown: FiniteDuration,
   guildID: DiscordID,
   counterChannelID: DiscordID,
+  quoteChannelID: DiscordID,
 ) derives ConfigReader
 
 object CuteguardConfiguration:

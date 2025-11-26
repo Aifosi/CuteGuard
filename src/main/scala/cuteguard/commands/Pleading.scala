@@ -18,7 +18,7 @@ case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String)
   override def matches(event: MessageEvent): Boolean = pattern.matches(stripAccents(event.content.toLowerCase))
 
   override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
-    lazy val embed = Embed(s"${event.authorName}, use your words cutie", link)
+    lazy val embed = Embed(s"${event.memberName}, use your words cutie", link)
 
     List(
       cooldown.addEventAndCheckReady(event.author, Action.Pleading),
