@@ -1,7 +1,7 @@
 name := "CuteGuard"
 
 val scala3Version = "3.7.4"
-val javaVersion = "25-jre"
+val javaVersion = "25"
 ThisBuild / scalaVersion := scala3Version
 
 // Used for scala fix
@@ -55,7 +55,7 @@ Universal / mappings               ++= Seq(
 
 Docker / dockerRepository := Some("aifosi")
 dockerUpdateLatest        := true
-dockerBaseImage           := s"eclipse-temurin:$javaVersion"
+dockerBaseImage           := s"eclipse-temurin:$javaVersion-jre"
 publish / skip            := false
 dockerBuildOptions        += "--platform=linux/amd64"
 
