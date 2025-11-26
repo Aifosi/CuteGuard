@@ -1,6 +1,7 @@
 name := "CuteGuard"
 
 val scala3Version = "3.7.4"
+val javaVersion = "25-jre"
 ThisBuild / scalaVersion := scala3Version
 
 // Used for scala fix
@@ -13,7 +14,7 @@ ThisBuild / scalafmtOnCompile := true
 enablePlugins(JavaAppPackaging, DockerPlugin, AshScriptPlugin)
 
 ThisBuild / publish / skip                      := true
-ThisBuild / githubWorkflowJavaVersions          := Seq(JavaSpec.temurin("17"))
+ThisBuild / githubWorkflowJavaVersions          := Seq(JavaSpec.temurin(javaVersion))
 ThisBuild / crossScalaVersions                  := List(scala3Version)
 ThisBuild / githubWorkflowIncludeClean          := false
 ThisBuild / githubWorkflowTargetBranches        := Seq("master")
@@ -54,7 +55,7 @@ Universal / mappings               ++= Seq(
 
 Docker / dockerRepository := Some("aifosi")
 dockerUpdateLatest        := true
-dockerBaseImage           := "eclipse-temurin:25-jre"
+dockerBaseImage           := s"eclipse-temurin:$javaVersion"
 publish / skip            := false
 dockerBuildOptions        += "--platform=linux/amd64"
 
