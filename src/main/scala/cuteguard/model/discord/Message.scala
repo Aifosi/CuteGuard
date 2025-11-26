@@ -18,6 +18,7 @@ class Message(private[model] val message: JDAMessage):
   lazy val id: DiscordID           = DiscordID(message.getIdLong)
   lazy val jumpUrl: String         = message.getJumpUrl
   lazy val attachments             = message.getAttachments.asScala
+  lazy val guild                   = Guild(message.getGuild)
 
   lazy val author: User = User(message.getAuthor)
 

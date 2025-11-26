@@ -8,7 +8,7 @@ import cats.Show
 import cats.data.OptionT
 import cats.effect.IO
 import net.dv8tion.jda.api.entities.{MessageEmbed, MessageHistory}
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
+import net.dv8tion.jda.api.entities.channel.middleman.{GuildChannel, MessageChannel}
 import net.dv8tion.jda.api.utils.FileUpload
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -18,9 +18,13 @@ import scala.compiletime.asMatchable
 import scala.jdk.CollectionConverters.*
 
 class Channel(channel: MessageChannel):
-  lazy val discordID: DiscordID                                   = DiscordID(channel.getIdLong)
-  lazy val mention: String                                        = channel.getAsMention
-  lazy val name: String                                           = channel.getName
+  lazy val discordID: DiscordID = DiscordID(channel.getIdLong)
+  lazy val mention: String      = channel.getAsMention
+  lazy val name: String         = channel.getName
+  lazy val guild: Option[Guild] = channel match
+    case channel: GuildChannel => Some(Guild(channel.getGuild))
+    case _                     => None
+
   def sendMessage(string: String): IO[Message]                    =
     channel.sendMessage(string).toIO.map(new Message(_))
   def sendEmbed(embed: MessageEmbed): IO[Message]                 = channel.sendMessageEmbeds(embed).toIO.map(new Message(_))

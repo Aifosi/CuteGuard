@@ -20,6 +20,7 @@ import scala.jdk.CollectionConverters.*
 class Guild(private[model] val guild: JDAGuild):
   lazy val discordID: DiscordID = DiscordID(guild.getIdLong)
   lazy val ownerID: DiscordID   = DiscordID(guild.getOwnerIdLong)
+  lazy val name                 = guild.getName
 
   def isOwner(user: User): Boolean = user.discordID == ownerID
 
