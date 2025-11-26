@@ -21,6 +21,7 @@ class Quote(quoteChannel: IO[Channel]) extends MessageInteractionCommand:
                          .setTitle(s"$messageAuthor said")
                          .setDescription(event.content)
                          .setFooter(s"This message was quoted by $authorName")
+                         .setImage(event.message.attachments.headOption.map(_.getUrl).orNull)
                          .setUrl(event.message.jumpUrl)
                          .setColor(Color(150, 255, 120))
                          .build()

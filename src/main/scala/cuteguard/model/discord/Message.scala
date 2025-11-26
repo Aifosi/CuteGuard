@@ -9,12 +9,15 @@ import cats.syntax.foldable.*
 import net.dv8tion.jda.api.entities.{Message as JDAMessage, MessageEmbed}
 import net.dv8tion.jda.api.entities.emoji.Emoji
 
+import scala.jdk.CollectionConverters.*
+
 class Message(private[model] val message: JDAMessage):
   lazy val content: String         = message.getContentRaw
   lazy val contentStripped: String = message.getContentStripped
   lazy val contentDisplay: String  = message.getContentDisplay
   lazy val id: DiscordID           = DiscordID(message.getIdLong)
   lazy val jumpUrl: String         = message.getJumpUrl
+  lazy val attachments             = message.getAttachments.asScala
 
   lazy val author: User = User(message.getAuthor)
 
