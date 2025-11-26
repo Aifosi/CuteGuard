@@ -1,7 +1,7 @@
 name := "CuteGuard"
 
 val scala3Version = "3.7.4"
-val javaVersion = "25"
+val javaVersion   = "25"
 ThisBuild / scalaVersion := scala3Version
 
 // Used for scala fix
