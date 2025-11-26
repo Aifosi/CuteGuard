@@ -13,13 +13,16 @@ class Quote(quoteChannel: IO[Channel]) extends MessageInteractionCommand:
   override val name: String = "Quote message"
 
   override def apply(event: MessageInteractionEvent)(using Logger[IO]): IO[Boolean] =
-    quoteChannel.flatMap {
-      _.sendEmbed {
-        new EmbedBuilder()
-          .setTitle(s"${event.authorName} said")
-          .setDescription(event.content)
-          .setUrl(event.message.jumpUrl)
-          .setColor(Color(150, 255, 120))
-          .build()
-      }
-    }.as(true)
+    for
+      authorName   <- event.authorNameInGuild
+      quoteChannel <- quoteChannel
+      embed         = new EmbedBuilder()
+                        .setTitle(s"${event.message.author.nameInGuild} said")
+                        .setDescription(event.content)
+                        .setFooter(s"This message was quoted by $authorName")
+                        .setUrl(event.message.jumpUrl)
+                        .setColor(Color(150, 255, 120))
+                        .build()
+      quote        <- quoteChannel.sendEmbed(embed)
+      _            <- event.replyEphemeral(s"Message quoted you can find it [here](${quote.jumpUrl})")
+    yield true

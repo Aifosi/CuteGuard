@@ -44,28 +44,7 @@ class SlashCommandEvent(
   jdaMember: Option[JDAMember],
   jdaGuild: Option[JDAGuild],
   underlying: SlashCommandInteractionEvent,
-) extends GenericTextEvent(jdaChannel, jdaAuthor, jdaMember, jdaGuild) with SlashAPI:
-  def deferReply(ephemeral: Boolean = false): IO[Unit] = underlying.deferReply(ephemeral).toIO.void
-
-  override def reply(string: String): IO[Message] =
-    underlying.reply(string).toIO.flatMap(_.retrieveOriginal.toIO).map(Message(_))
-
-  override def replyEphemeral(string: String): IO[Option[Message]] =
-    underlying.reply(string).setEphemeral(true).toIO.as(None)
-
-  override def replyImage(image: BufferedImage, title: String, ephemeral: Boolean = false): IO[Option[Message]] =
-    val outputStream = new ByteArrayOutputStream()
-    ImageIO.write(image, "png", outputStream)
-    underlying
-      .reply(title)
-      .addFiles(FileUpload.fromData(outputStream.toByteArray, title + ".png"))
-      .setEphemeral(ephemeral)
-      .toIO
-      .flatMap {
-        case _ if ephemeral  => IO.pure(None)
-        case interactionHook => interactionHook.retrieveOriginal.toIO.map(Message(_).some)
-      }
-
+) extends GenericTextEvent(jdaChannel, jdaAuthor, jdaMember, jdaGuild) with InteractionMixin(underlying):
   inline def getOption[T: OptionReader as reader](option: String): OptionResult[T] =
     MacroHelper.getOption[T](reader, underlying, option)
 

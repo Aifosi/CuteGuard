@@ -15,18 +15,19 @@ abstract class Event(
   jdaMember: Option[JDAMember],
   jdaGuild: Option[JDAGuild],
 ):
-  lazy val guild: IO[Guild]         = IO.fromOption(jdaGuild.map(new Guild(_)))(new Exception("Failed to get guild of event"))
-  lazy val author: User             = new User(jdaAuthor)
-  lazy val authorMember: IO[Member] =
+  lazy val guild: IO[Guild]              = IO.fromOption(jdaGuild.map(new Guild(_)))(new Exception("Failed to get guild of event"))
+  lazy val author: User                  = new User(jdaAuthor)
+  lazy val authorMember: IO[Member]      =
     OptionT
       .fromOption[IO](jdaMember.map(new Member(_)))
       .orElse(OptionT.liftF(guild).flatMap(author.member))
       .value
       .flatMap(IO.fromOption(_)(new Exception("Failed to get member of event")))
-  lazy val channel: Channel         = new Channel(jdaChannel)
-  lazy val fromBot: Boolean         = author.isBot
-  lazy val discord: Discord         = new Discord(jdaAuthor.getJDA)
-  lazy val authorName: String       = jdaAuthor.getName
+  lazy val channel: Channel              = new Channel(jdaChannel)
+  lazy val fromBot: Boolean              = author.isBot
+  lazy val discord: Discord              = new Discord(jdaAuthor.getJDA)
+  lazy val authorName: String            = jdaAuthor.getName
+  lazy val authorNameInGuild: IO[String] = authorMember.map(_.nameInGuild)
 
   def reply(string: String): IO[Message]      = channel.sendMessage(string)
   def reply(embed: MessageEmbed): IO[Message] = channel.sendEmbed(embed)

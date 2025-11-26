@@ -13,7 +13,9 @@ class MessageInteractionEvent(
   jdaAuthor: JDAUser,
   jdaMember: Option[JDAMember],
   jdaGuild: Option[JDAGuild],
+  interactionEvent: MessageContextInteractionEvent,
 ) extends InteractionEvent(name, jdaChannel, jdaAuthor, jdaMember, jdaGuild) with MessageMixin(jdaMessage)
+    with InteractionMixin(interactionEvent)
 
 object MessageInteractionEvent:
   def apply(event: MessageContextInteractionEvent): MessageInteractionEvent =
@@ -24,4 +26,5 @@ object MessageInteractionEvent:
       event.getUser,
       Option(event.getMember),
       Try(event.getGuild).toOption,
+      event,
     )

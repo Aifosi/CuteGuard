@@ -15,6 +15,8 @@ class Message(private[model] val message: JDAMessage):
   lazy val id: DiscordID           = DiscordID(message.getIdLong)
   lazy val jumpUrl: String         = message.getJumpUrl
 
+  def author: Member = Member(message.getMember)
+
   def addReactions(reactions: String*): IO[Unit]                 =
     reactions.toList.map(Emoji.fromFormatted).traverse_(reaction => message.addReaction(reaction).toIO)
   def addReaction(reaction: String): IO[Unit]                    = message.addReaction(Emoji.fromFormatted(reaction)).toIO.void
