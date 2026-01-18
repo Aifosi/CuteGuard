@@ -35,13 +35,14 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
     Logger[IO],
   ): IO[Unit] =
     val response = for
-      action    <- event.getOption[Action]("action").toEitherT
-      user      <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
-      giver     <- event.getOption[Option[User]]("user").toEitherT
-      events    <- EitherT.liftF(events.list(user.some, giver, action.some, None, "'last' command".some))
-      mostRecent = events.maxByOption(_.date)
-      emptyText  = s"${user.mention} has no ${action.plural} on record."
-      text       = mostRecent.fold(emptyText)(event => s"${user.mention} last $action was ${dateText(event)}")
+      action        <- event.getOption[Action]("action").toEitherT
+      user          <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
+      giver         <- event.getOption[Option[User]]("user").toEitherT
+      events        <- EitherT.liftF(events.list(user.some, giver, action.some, None, "'last' command".some))
+      mostRecent     = events.maxByOption(_.date)
+      givenBy = giver.fold("")(giver => s" given by ${giver.mention}")
+      emptyText      = s"${user.mention} has no registered ${action.plural}$givenBy."
+      text           = mostRecent.fold(emptyText)(event => s"${user.mention} last $action$givenBy was ${dateText(event)}")
     yield text
     eitherTResponse(response, slashAPI).void
 
