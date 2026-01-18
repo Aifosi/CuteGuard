@@ -8,6 +8,7 @@ import cuteguard.db.Events
 import cuteguard.model.{Action, Event}
 import cuteguard.model.discord.User
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
+import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
 import cats.Show
@@ -37,10 +38,12 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
     val response = for
       action    <- event.getOption[Action]("action").toEitherT
       user      <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
-      giver     <- event.getOption[Option[User]]("user").toEitherT
+      giver     <- event.getOption[Option[User]]("giver").toEitherT
+      _         <- EitherT.leftWhen(giver.contains(user), "The giver cannot be the same as the user.")
       events    <- EitherT.liftF(events.list(user.some, giver, action.some, None, "'last' command".some))
       mostRecent = events.maxByOption(_.date)
-      givenBy    = giver.fold("")(giver => s" given by ${giver.mention}")
+      guild     <- EitherT.fromOption(event.guild, "Could not get guild for last command.")
+      givenBy    = giver.fold("")(giver => s" given by ${giver.getNameIn(guild)}")
       emptyText  = s"${user.mention} has no registered ${action.plural}$givenBy."
       text       = mostRecent.fold(emptyText)(event => s"${user.mention} last $action$givenBy was ${dateText(event)}")
     yield text
