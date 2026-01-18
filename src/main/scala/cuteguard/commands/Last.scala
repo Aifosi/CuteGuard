@@ -21,6 +21,7 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
   override val options: List[PatternOption]                                            = List(
     _.addOption[Action]("action", "Text action you want the date for.", autoComplete = true),
     _.addOption[Option[User]]("user", "Last date for whom, defaults to you."),
+    _.addOption[Option[User]]("giver", "The giver of the last action, defaults to none."),
   )
   override val autoCompleteOptions: Map[String, AutoCompleteEvent => IO[List[Action]]] = Map(
     "action" -> Action.values.toList,
@@ -36,7 +37,8 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
     val response = for
       action    <- event.getOption[Action]("action").toEitherT
       user      <- event.getOption[Option[User]]("user").toEitherT.map(_.getOrElse(event.author))
-      events    <- EitherT.liftF(events.list(user.some, None, action.some, None, "'last' command".some))
+      giver     <- event.getOption[Option[User]]("user").toEitherT
+      events    <- EitherT.liftF(events.list(user.some, giver, action.some, None, "'last' command".some))
       mostRecent = events.maxByOption(_.date)
       emptyText  = s"${user.mention} has no ${action.plural} on record."
       text       = mostRecent.fold(emptyText)(event => s"${user.mention} last $action was ${dateText(event)}")
