@@ -12,7 +12,7 @@ import cuteguard.syntax.eithert.*
 import cuteguard.utils.toEitherT
 
 import cats.Show
-import cats.data.EitherT
+import cats.data.{EitherT, OptionT}
 import cats.effect.{IO, Ref}
 import cats.syntax.option.*
 import org.typelevel.log4cats.Logger
@@ -43,7 +43,8 @@ case class Last(events: Events) extends SlashCommand with Options with AutoCompl
       events    <- EitherT.liftF(events.list(user.some, giver, action.some, None, "'last' command".some))
       mostRecent = events.maxByOption(_.date)
       guild     <- EitherT.fromOption(event.guild, "Could not get guild for last command.")
-      givenBy    = giver.fold("")(giver => s" given by ${giver.getNameIn(guild)}")
+      giverName  = OptionT.fromOption[IO](giver).flatMap(_.getNameIn(guild))
+      givenBy   <- EitherT.liftF(giverName.fold("")(giverName => s" given by $giverName"))
       emptyText  = s"${user.mention} has no registered ${action.plural}$givenBy."
       text       = mostRecent.fold(emptyText)(event => s"${user.mention} last $action$givenBy was ${dateText(event)}")
     yield text
