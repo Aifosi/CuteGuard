@@ -3,11 +3,11 @@ package cuteguard.commands
 import cuteguard.commands.AutoCompletable.*
 import cuteguard.db.Events
 import cuteguard.model.Action
-import cuteguard.model.discord.DiscordID
+import cuteguard.model.discord.{DiscordID, Guild}
 import cuteguard.model.discord.event.{AutoCompleteEvent, SlashAPI, SlashCommandEvent}
 import cuteguard.syntax.chaining.*
 import cuteguard.syntax.eithert.*
-import cuteguard.utils.toEitherT
+import cuteguard.utils.{toEitherT, Maybe}
 
 import cats.data.EitherT
 import cats.effect.{IO, Ref}
@@ -16,7 +16,7 @@ import org.typelevel.log4cats.Logger
 
 import java.util.UUID
 
-case class Highscore(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
+case class HighScore(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
   override val fullCommand: String                                                     = "highscore"
   private val topDefault                                                               = 10
   override val options: List[PatternOption]                                            = List(
@@ -31,23 +31,63 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
     "action" -> Action.values.toList,
   ).fromSimplePure
 
+  override val ephemeralResponses: Boolean = false
+
+  override def slowResponse(
+    pattern: SlashPattern,
+    event: SlashCommandEvent,
+    slashAPI: Ref[IO, SlashAPI],
+  )(using Logger[IO]): IO[Unit] =
+    val response = for
+      action    <- event.getOption[Action]("action").toEitherT
+      top       <- event.getOption[Option[Int]]("top").toEitherT.map(_.getOrElse(topDefault))
+      lastDays  <- event.getOption[Option[Int]]("last_days").toEitherT.map(_.getOrElse(30))
+      _         <- EitherT.leftWhen(lastDays <= 0, "`last_days` must be greater than 0!")
+      eventList <- EitherT.liftF(events.lowList(None, None, action.some, lastDays.some))
+      highScores = eventList
+                     .map((_, receiver_user_uuid, receiver_user_id, _, _, _, amount, _) =>
+                       (receiver_user_uuid, receiver_user_id, amount),
+                     )
+
+      daysText = s" for the last $lastDays ${if lastDays == 1 then "day" else "days"}"
+      text    <-
+        highScores.headOption.fold(EitherT.pure[IO, String](s"There are no entries for **${action.show}**$daysText.")) {
+          _ =>
+            HighScore.formatted(events.users.guild, highScores, top, action, daysText)
+        }
+    yield text
+    eitherTResponse(response, slashAPI).void
+
+  override val description: String = "Get the high scores for the chosen action."
+
+object HighScore:
   extension (int: Int)
     private def withThousandsSeparatorReverse: String = int.toString.reverse.grouped(3).mkString(" ")
     def withThousandsSeparator: String                = withThousandsSeparatorReverse.reverse
     def padWithThousandsSeparator(size: Int): String  =
       withThousandsSeparatorReverse.padTo(size, ' ').reverse
 
-  def highscoreText(
-    topEvents: List[(((UUID, DiscordID), Int), Int)],
+  def formatted(
+    guild: Maybe[Guild],
+    allEvents: List[(UUID, DiscordID, Int)],
+    top: Int,
     action: Action,
     daysText: String,
   )(using Logger[IO]) =
+    val topEvents        = allEvents
+      .groupBy((user_uuid, user_id, _) => (user_uuid, user_id))
+      .view
+      .mapValues(_.map(_(2)).sum)
+      .toList
+      .sortBy(_(1))(using Ordering[Int].reverse)
+      .when(top > 0)(_.take(top))
+      .zipWithIndex
     val discordIDToUUIDs = topEvents.map { case (((uuid, discordID), _), _) => discordID -> uuid }.toMap
 
-    events.users.guild
+    guild
       .flatMap(_.members(discordIDToUUIDs.keySet))
       .map { members =>
-        val start            = s"Current highscore for **${action.show}**$daysText is:\n"
+        val start            = s"Current high scores for **${action.show}**$daysText is:\n"
         val maxTotalTextSize = topEvents.head(0)(1).withThousandsSeparator.length
         val maxTextSize      = topEvents.size.withThousandsSeparator.length
         val uuidToName       = members
@@ -62,39 +102,3 @@ case class Highscore(events: Events) extends SlashCommand with Options with Auto
       }
       .leftSemiflatTap(Logger[IO].error(_)("Failed to list users"))
       .leftMap(_ => "Failed to get user names, sorry!")
-
-  override val ephemeralResponses: Boolean = false
-
-  override def slowResponse(
-    pattern: SlashPattern,
-    event: SlashCommandEvent,
-    slashAPI: Ref[IO, SlashAPI],
-  )(using Logger[IO]): IO[Unit] =
-    val response = for
-      action   <- event.getOption[Action]("action").toEitherT
-      top      <- event.getOption[Option[Int]]("top").toEitherT.map(_.getOrElse(topDefault))
-      lastDays <- event.getOption[Option[Int]]("last_days").toEitherT.map(_.getOrElse(30))
-      _        <- EitherT.leftWhen(lastDays <= 0, "`last_days` must be greater than 0!")
-      events   <- EitherT.liftF(events.lowList(None, None, action.some, lastDays.some))
-      topEvents = events
-                    .map((_, receiver_user_uuid, receiver_user_id, _, _, _, amount, _) =>
-                      (receiver_user_uuid, receiver_user_id, amount),
-                    )
-                    .groupBy((receiver_user_uuid, receiver_user_id, _) => (receiver_user_uuid, receiver_user_id))
-                    .view
-                    .mapValues(_.map(_(2)).sum)
-                    .toList
-                    .sortBy(_(1))(using Ordering[Int].reverse)
-                    .when(top > 0)(_.take(top))
-                    .zipWithIndex
-
-      daysText = s" for the last $lastDays ${if lastDays == 1 then "day" else "days"}"
-      text    <-
-        topEvents.headOption.fold(EitherT.pure[IO, String](s"There are no entries for **${action.show}**$daysText.")) {
-          _ =>
-            highscoreText(topEvents, action, daysText)
-        }
-    yield text
-    eitherTResponse(response, slashAPI).void
-
-  override val description: String = "Get the highscore for the given action."

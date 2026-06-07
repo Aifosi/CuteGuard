@@ -5,14 +5,18 @@ import cuteguard.Fitness.sanitise
 import cats.effect.{Deferred, IO}
 import org.apache.commons.lang3.StringUtils.stripAccents
 
+import scala.math
+
 class Fitness(quadgrams: Deferred[IO, Map[String, Double]]):
   extension (string: String)
     private def fitness(gramLength: Int, gramScores: Map[String, Double]): Double = string match
       case string if string.isBlank || string.length < gramLength => 0d
       case string                                                 =>
         val grams             = string.sliding(gramLength).toList
-        val longGramThreshold = 13
-        val longGramPenalty   = Math.log(Math.max(string.length, longGramThreshold) - (longGramThreshold - Math.E))
+        val longGramThreshold = 15
+        val logBase           = 5
+        val longGramPenalty   =
+          math.log(math.max(string.length, longGramThreshold) - (longGramThreshold - logBase)) / math.log(logBase)
         grams.foldLeft(0d)((acc, gram) => acc + gramScores(gram)) / grams.length * longGramPenalty
 
     private def maxWordFitness(minLength: Int, gram: Int, map: Map[String, Double]): (String, String, Double) =

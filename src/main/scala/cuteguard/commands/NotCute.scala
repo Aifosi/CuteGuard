@@ -42,7 +42,7 @@ case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String)
 
     List(
       cooldown.addEventAndCheckReady(event.author, Action.NotCute),
-      preferences.find(event.author, Some("not cute")).fold(true)(!_.notCuteOptOut),
+      preferences.find(event.author, Some(Action.NotCute.show)).fold(true)(!_.notCuteOptOut),
     ).foldLeft(IO.pure(true)) { case (acc, io) =>
       acc.flatMap {
         case false => IO.pure(false)

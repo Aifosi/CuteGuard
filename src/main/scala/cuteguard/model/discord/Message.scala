@@ -6,6 +6,7 @@ import cats.data.OptionT
 import cats.effect.IO
 import cats.instances.list.*
 import cats.syntax.foldable.*
+import cats.syntax.traverse.*
 import net.dv8tion.jda.api.entities.{Message as JDAMessage, MessageEmbed}
 import net.dv8tion.jda.api.entities.emoji.Emoji
 
@@ -20,7 +21,9 @@ class Message(private[model] val message: JDAMessage):
   lazy val attachments             = message.getAttachments.asScala
   lazy val guild                   = Guild(message.getGuild)
 
-  lazy val author: User = User(message.getAuthor)
+  lazy val author: User                           = User(message.getAuthor)
+  lazy val messageReference: OptionT[IO, Message] =
+    OptionT(Option(message.getMessageReference).flatTraverse(_.resolve().toIO.attempt.map(_.toOption))).map(Message(_))
 
   def authorMember(guild: Guild): OptionT[IO, Member] =
     OptionT

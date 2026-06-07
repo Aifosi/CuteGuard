@@ -47,8 +47,8 @@ case class Subsmash(
     val members = Subsmash.memberNames(event.guild, event.memberName)
     List(
       Subsmash.best(fitness, config)(event.content, members).map(_.exists(_(2) > config.threshold)),
-      cooldown.addEventAndCheckReady(event.author, Action.NotCute),
-      preferences.find(event.author, label = Some("subsmash")).fold(true)(!_.subsmashOptOut),
+      cooldown.addEventAndCheckReady(event.author, Action.Subsmash, event.message.messageReference.map(_.author)),
+      preferences.find(event.author, label = Some(Action.Subsmash.show)).fold(true)(!_.subsmashOptOut),
     ).foldLeft(IO.pure(true)) { case (acc, io) =>
       acc.flatMap {
         case false => IO.pure(false)

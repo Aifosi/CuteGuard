@@ -29,7 +29,10 @@ class Quote(quoteChannel: IO[Channel]) extends MessageInteractionCommand:
                              .setColor(Color(150, 255, 120))
                              .build()
           quote         <- quoteChannel.sendEmbed(embed)
-          _             <- event.replyEphemeral(s"Message quoted you can find it [here](${quote.jumpUrl})")
+          _             <-
+            event.reply(
+              s"${event.message.author.mention},$authorName quoted [this message](${event.message.jumpUrl}), you can find it [here](${quote.jumpUrl})",
+            )
         yield ()
 
     }.as(true)

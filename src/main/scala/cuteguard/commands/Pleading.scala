@@ -21,8 +21,8 @@ case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String)
     lazy val embed = Embed(s"${event.memberName}, use your words cutie", link)
 
     List(
-      cooldown.addEventAndCheckReady(event.author, Action.Pleading),
-      preferences.find(event.author, Some("pleading")).fold(true)(!_.pleadingOptOut),
+      cooldown.addEventAndCheckReady(event.author, Action.Pleading, event.message.messageReference.map(_.author)),
+      preferences.find(event.author, Some(Action.Pleading.show)).fold(true)(!_.pleadingOptOut),
     ).foldLeft(IO.pure(true)) { case (acc, io) =>
       acc.flatMap {
         case false => IO.pure(false)
