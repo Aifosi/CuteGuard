@@ -1,6 +1,6 @@
 name := "CuteGuard"
 
-val scala3Version = "3.7.4"
+val scala3Version = "3.8.4"
 val javaVersion   = "25"
 ThisBuild / scalaVersion := scala3Version
 
@@ -95,19 +95,19 @@ libraryDependencies ++= Seq(
 )
 
 lazy val apacheLang     = "org.apache.commons"     % "commons-lang3"              % "3.20.0"
-lazy val catsEffect     = "org.typelevel"         %% "cats-effect"                % "3.6.3"
-lazy val circe          = "io.circe"              %% "circe-core"                 % "0.14.15"
+lazy val catsEffect     = "org.typelevel"         %% "cats-effect"                % "3.7.0"
+lazy val circe          = "io.circe"              %% "circe-core"                 % "0.14.16"
 lazy val circeParser    = circe.organization      %% "circe-parser"               % circe.revision
 lazy val catsRetry      = "com.github.cb372"      %% "cats-retry"                 % "4.0.0"
-lazy val fs2            = "co.fs2"                %% "fs2-core"                   % "3.12.2"
+lazy val fs2            = "co.fs2"                %% "fs2-core"                   % "3.13.0"
 lazy val fs2IO          = fs2.organization        %% "fs2-io"                     % fs2.revision
-lazy val jda            = "net.dv8tion"            % "JDA"                        % "6.1.2"
-lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"             % "2.7.1"
-lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"            % "1.5.21"
-lazy val pureconfig     = "com.github.pureconfig" %% "pureconfig-core"            % "0.17.9"
+lazy val jda            = "net.dv8tion"            % "JDA"                        % "6.5.0"
+lazy val log4cats       = "org.typelevel"         %% "log4cats-slf4j"             % "2.8.0"
+lazy val logbackClassic = "ch.qos.logback"         % "logback-classic"            % "1.6.1"
+lazy val pureconfig     = "com.github.pureconfig" %% "pureconfig-core"            % "0.17.10"
 lazy val pureconfigCE   = pureconfig.organization %% "pureconfig-cats-effect"     % pureconfig.revision
-lazy val postgres       = "org.postgresql"         % "postgresql"                 % "42.7.8"
-lazy val flyway         = "org.flywaydb"           % "flyway-core"                % "11.17.2"
+lazy val postgres       = "org.postgresql"         % "postgresql"                 % "42.7.13"
+lazy val flyway         = "org.flywaydb"           % "flyway-core"                % "13.2.0"
 lazy val flywayPostgres = flyway.organization      % "flyway-database-postgresql" % flyway.revision
-lazy val doobie         = "org.tpolecat"          %% "doobie-core"                % "1.0.0-RC11"
+lazy val doobie         = "org.tpolecat"          %% "doobie-core"                % "1.0.0-RC12"
 lazy val doobiePostgres = doobie.organization     %% "doobie-postgres"            % doobie.revision

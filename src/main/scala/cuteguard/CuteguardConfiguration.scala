@@ -30,6 +30,7 @@ case class CuteguardConfiguration(
   guildID: DiscordID,
   counterChannelID: DiscordID,
   quoteChannelID: DiscordID,
+  funnyBotRoleID: DiscordID,
 ) derives ConfigReader
 
 object CuteguardConfiguration:

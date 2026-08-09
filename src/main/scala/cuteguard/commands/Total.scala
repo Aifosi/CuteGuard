@@ -14,7 +14,8 @@ import cats.syntax.option.*
 import cats.syntax.traverse.*
 import org.typelevel.log4cats.Logger
 
-case class Total(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
+case class Total(events: Events)
+    extends SlashCommand with Options with AutoComplete[Action] with SlowResponse with FunnyCommand:
   override val fullCommand: String                                                     = "total"
   override val options: List[PatternOption]                                            = List(
     _.addOption[Option[Action]]("action", "Text action you want the total for.", autoComplete = true),

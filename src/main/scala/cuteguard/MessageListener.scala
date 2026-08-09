@@ -1,10 +1,13 @@
 package cuteguard
 
 import cuteguard.DurationShow.given
-import cuteguard.commands.{NoChannelLog, PatternCommand}
+import cuteguard.Result.Continue
+import cuteguard.commands.{AnyCommand, FunnyCommand, NoChannelLog, PatternCommand, Quote, SlashCommand}
+import cuteguard.model.discord.Role
 import cuteguard.model.discord.event.{
   AutoCompleteEvent,
   Event,
+  InteractionMixin,
   MessageEvent,
   MessageInteractionEvent,
   ReactionEvent,
@@ -18,6 +21,7 @@ import cats.effect.unsafe.IORuntime
 import cats.instances.list.*
 import cats.syntax.foldable.*
 import cats.syntax.show.*
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.{
   CommandAutoCompleteInteractionEvent,
   MessageContextInteractionEvent,
@@ -31,20 +35,43 @@ import org.typelevel.log4cats.Logger
 
 import scala.concurrent.duration.*
 
+enum Result:
+  case Continue, Stop, Skip
+
 class MessageListener(
   commander: Commander,
+  funnyBotRole: IO[Role],
 )(using l: Logger[IO], r: IORuntime, discordLogger: DiscordLogger)
     extends ListenerAdapter:
   private def runTimedCommand(
-    run: () => IO[Boolean],
+    run: IO[Unit],
   )(
     log: Long => IO[Unit],
-  ): IO[Boolean] = for
-    start    <- IO(System.nanoTime)
-    continue <- run()
-    end      <- IO(System.nanoTime)
-    _        <- log(end - start)
-  yield continue
+  ): IO[Unit] = for
+    start <- IO(System.nanoTime)
+    _     <- run
+    end   <- IO(System.nanoTime)
+    _     <- log(end - start)
+  yield ()
+
+  private def funnyCheck(event: Event, command: AnyCommand): IO[Result] = command match
+    case _: FunnyCommand =>
+      funnyBotRole.flatMap { role =>
+        val hasOverride: Permission => Boolean =
+          (permission: Permission) => event.channel.permissionContainer.exists(_.hasAllowedOverride(role, permission))
+        val hasPermission                      = command match
+          case command: SlashCommand => hasOverride(Permission.USE_APPLICATION_COMMANDS)
+          case command: Quote        => hasOverride(Permission.PIN_MESSAGES)
+          case command               => hasOverride(Permission.MESSAGE_SEND)
+
+        if hasPermission then IO.pure(Result.Continue)
+        else
+          event match
+            case interactionEvent: InteractionMixin =>
+              interactionEvent.replyEphemeral(s"Cannot use `$command` command in this channel.").as(Result.Skip)
+            case _                                  => IO.pure(Result.Skip)
+      }
+    case _               => IO.pure(Result.Continue)
 
   private def runCommandList[T, E <: Event](
     event: E,
@@ -55,19 +82,25 @@ class MessageListener(
     if !event.author.isBot then
       commands
         .sortBy(-_.pattern.toString.length)
-        .foldLeft(IO.pure(false)) {
+        .foldLeft(IO.pure(Result.Continue)) {
           case (io, command) if command.matches(event) =>
             for
-              stopped <- io.logError(true)
-              stop    <-
-                if stopped then IO.pure(true)
-                else
-                  runTimedCommand(() => command.apply(command.pattern, event))(duration =>
-                    log(event, command, duration),
-                  )
-            yield stop
-          case (io, _)                                 => io
+              previous   <- io
+              funnyCheck <- if previous == Result.Continue then funnyCheck(event, command) else IO.pure(previous)
+              result     <- funnyCheck match
+                              case Result.Continue =>
+                                runTimedCommand(command.apply(command.pattern, event))(log(event, command, _))
+                                  .as(Result.Stop)
+                              case Result.Skip     =>
+                                Logger[IO]
+                                  .debug(s"Matched $command but skipping cause in a not FunnyChannel")
+                                  .as(Result.Continue)
+                              case Result.Stop     => IO.pure(Result.Stop)
+            yield result
+
+          case (io, _) => io
         }
+        .logError(Result.Stop)
         .void
     else IO.unit
 
@@ -128,13 +161,17 @@ class MessageListener(
     val event = MessageInteractionEvent(jdaEvent)
     commander.messageInteractionCommands.collect {
       case command if command.matches(event) =>
-        runTimedCommand(() => command.apply(event)) { duration =>
-          log(
-            event,
-            s" used message interaction command $command",
-            command.isInstanceOf[NoChannelLog],
-            duration,
-          )
+        funnyCheck(event, command).flatMap {
+          case Continue =>
+            runTimedCommand(command.apply(event)) { duration =>
+              log(
+                event,
+                s" used message interaction command $command",
+                command.isInstanceOf[NoChannelLog],
+                duration,
+              )
+            }
+          case _        => IO.unit
         }
     }.sequence_.unsafeRunAndForget()
 

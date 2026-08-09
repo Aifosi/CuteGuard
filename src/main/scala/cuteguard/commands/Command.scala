@@ -30,7 +30,7 @@ sealed abstract class Command[E <: Event] extends Named:
 sealed abstract class PatternCommand[T, E <: Event] extends Command[E]:
   def pattern: T
 
-  def apply(pattern: T, event: E)(using Logger[IO]): IO[Boolean]
+  def apply(pattern: T, event: E)(using Logger[IO]): IO[Unit]
 
   val description: String
 
@@ -69,16 +69,16 @@ abstract class SlashCommand extends PatternCommand[SlashPattern, SlashCommandEve
 trait ErrorMessages:
   this: SlashCommand =>
 
-  def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean]
+  def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Unit]
 
-  override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
-    run(pattern, event).leftSemiflatMap(event.replyEphemeral(_).as(true)).merge
+  override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Unit] =
+    run(pattern, event).leftSemiflatMap(event.replyEphemeral(_).as(())).merge
 
 sealed abstract class InteractionCommand[E <: InteractionEvent] extends Command[E]:
   def name: String
 
   override def matches(event: E): Boolean = event.name.equalsIgnoreCase(name)
 
-  def apply(event: E)(using Logger[IO]): IO[Boolean]
+  def apply(event: E)(using Logger[IO]): IO[Unit]
 
 abstract class MessageInteractionCommand extends InteractionCommand[MessageInteractionEvent]

@@ -21,7 +21,7 @@ case class Subsmash(
   discord: Deferred[IO, Discord],
   config: SubsmashConfiguration,
   link: String,
-) extends TextCommand with NoChannelLog with Hidden:
+) extends TextCommand with NoChannelLog with FunnyCommand with Hidden:
   override def pattern: Regex = ".*".r
 
   private def resetActivity(name: String) = for
@@ -43,7 +43,7 @@ case class Subsmash(
     _           <- event.reply(embed)
   yield ()
 
-  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
+  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Unit] =
     val members = Subsmash.memberNames(event.guild, event.memberName)
     List(
       Subsmash.best(fitness, config)(event.content, members).map(_.exists(_(2) > config.threshold)),
@@ -56,7 +56,7 @@ case class Subsmash(
       }
     }.flatMap(IO.whenA(_)(sendReply(event)))
       .start
-      .as(true)
+      .as(())
 
 object Subsmash:
   def memberNames(guild: Option[Guild], author: String): IO[Set[String]] =

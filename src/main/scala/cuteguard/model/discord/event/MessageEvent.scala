@@ -13,9 +13,7 @@ import net.dv8tion.jda.api.entities.{
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
-import scala.util.Try
-
-open class MessageEvent(
+class MessageEvent private (
   jdaMessage: JDAMessage,
   jdaChannel: MessageChannel,
   jdaAuthor: JDAUser,
@@ -33,5 +31,5 @@ object MessageEvent:
       event.getChannel,
       event.getAuthor,
       Option(event.getMember),
-      Try(event.getGuild).toOption,
+      Option.when(event.isFromGuild)(event.getGuild),
     )

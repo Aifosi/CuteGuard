@@ -11,7 +11,7 @@ import org.typelevel.log4cats.Logger
 
 import scala.concurrent.duration.*
 
-open class DiscordLogger protected (
+class DiscordLogger protected (
   notificationsRef: Ref[IO, Set[String]],
   getLogChannel: () => OptionT[IO, Channel],
 ):

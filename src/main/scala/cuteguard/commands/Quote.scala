@@ -9,13 +9,14 @@ import org.typelevel.log4cats.Logger
 
 import java.awt.Color
 
-class Quote(quoteChannel: IO[Channel]) extends MessageInteractionCommand:
+class Quote(quoteChannel: IO[Channel]) extends MessageInteractionCommand with FunnyCommand:
   override val name: String = "Quote message"
 
-  override def apply(event: MessageInteractionEvent)(using Logger[IO]): IO[Boolean] =
+  override def apply(event: MessageInteractionEvent)(using Logger[IO]): IO[Unit] =
     quoteChannel.flatMap { quoteChannel =>
       val guild = quoteChannel.guild.get
-      if guild != event.message.guild then event.replyEphemeral(s"You can only quote messages from ${guild.name}.")
+      if guild != event.message.guild then
+        event.replyEphemeral(s"You can only quote messages from ${guild.name}.").as(())
       else
         for
           authorName    <- event.authorNameInGuild
@@ -34,5 +35,4 @@ class Quote(quoteChannel: IO[Channel]) extends MessageInteractionCommand:
               s"${event.message.author.mention},$authorName quoted [this message](${event.message.jumpUrl}), you can find it [here](${quote.jumpUrl})",
             )
         yield ()
-
-    }.as(true)
+    }

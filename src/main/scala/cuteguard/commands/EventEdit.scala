@@ -11,7 +11,8 @@ import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import org.typelevel.log4cats.Logger
 
-class EventEdit(events: Events, eventEditor: EventEditor) extends SlashCommand with Options with ErrorMessages:
+class EventEdit(events: Events, eventEditor: EventEditor)
+    extends SlashCommand with Options with ErrorMessages with FunnyCommand:
   override val fullCommand: String = "event edit"
 
   override val options: List[PatternOption] = List(
@@ -21,7 +22,7 @@ class EventEdit(events: Events, eventEditor: EventEditor) extends SlashCommand w
     _.addOption[Option[Boolean]]("remove_giver", "Do you want to remove the giver?"),
   )
 
-  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
+  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Unit] =
     for
       id          <- event.getOption[Int]("id").toEitherT
       activeEdit  <- OptionT(eventEditor.activeEdit(event.author))
@@ -47,6 +48,6 @@ class EventEdit(events: Events, eventEditor: EventEditor) extends SlashCommand w
                      )
       _           <- EitherT.liftF(eventEditor.registerActiveEdit(event.author, activeEdit))
       _           <- EitherT.liftF(event.replyEphemeral("Event edited."))
-    yield true
+    yield ()
 
   override val description: String = "Edits action history"

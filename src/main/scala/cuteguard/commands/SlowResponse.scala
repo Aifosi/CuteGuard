@@ -16,7 +16,7 @@ trait SlowResponse:
     Logger[IO],
   ): IO[Unit]
 
-  final override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
+  final override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Unit] =
     def switchToHook(slashAPI: Ref[IO, SlashAPI], repliedRef: Ref[IO, Boolean]) =
       for
         _       <- IO.sleep(2.seconds)
@@ -37,7 +37,7 @@ trait SlowResponse:
       _          <- slowResponse(pattern, event, slashAPI)
       _          <- repliedRef.set(true)
       _          <- fiber.cancel
-    yield true
+    yield ()
 
   protected def eitherTResponse(
     response: EitherT[IO, String, String],

@@ -9,7 +9,7 @@ trait StreamSyntax:
   extension (stream: Stream.type)
     def evalOption[F[_]: Functor, A](a: => F[Option[A]]): Stream[F, A]          = Stream.evalSeq(a.map(_.toSeq))
     def emitI[F[_], A](iterOnce: => IterableOnce[A]): Stream[F, A]              =
-      Stream.unfold(iterOnce.iterator)(i => Option.when(i.hasNext)((i.next, i)))
+      Stream.unfold(iterOnce.iterator)(i => Option.when(i.hasNext)((i.next(), i)))
     def evalI[F[_], A](iterOnce: => F[IterableOnce[A]]): Stream[F, A]           = Stream.eval(iterOnce).flatMap(emitI)
     def filter[F[_]](cond: Boolean): Stream[F, Unit]                            = if cond then Stream.emit(()) else Stream.empty
     def when[F[_], A](cond: Boolean)(a: => A): Stream[F, A]                     = emitI(Option.when(cond)(a))

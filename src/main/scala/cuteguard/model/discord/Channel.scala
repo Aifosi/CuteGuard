@@ -7,6 +7,7 @@ import cuteguard.syntax.io.*
 import cats.Show
 import cats.data.OptionT
 import cats.effect.IO
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.{MessageEmbed, MessageHistory}
 import net.dv8tion.jda.api.entities.channel.middleman.{GuildChannel, MessageChannel}
 import net.dv8tion.jda.api.utils.FileUpload
@@ -17,13 +18,16 @@ import java.io.File
 import scala.compiletime.asMatchable
 import scala.jdk.CollectionConverters.*
 
-class Channel(channel: MessageChannel):
-  lazy val discordID: DiscordID = DiscordID(channel.getIdLong)
-  lazy val mention: String      = channel.getAsMention
-  lazy val name: String         = channel.getName
-  lazy val guild: Option[Guild] = channel match
-    case channel: GuildChannel => Some(Guild(channel.getGuild))
+class Channel(private[model] val channel: MessageChannel):
+  lazy val discordID: DiscordID   = DiscordID(channel.getIdLong)
+  lazy val mention: String        = channel.getAsMention
+  lazy val name: String           = channel.getName
+  private[model] val guildChannel = channel match
+    case channel: GuildChannel => Some(channel)
     case _                     => None
+  lazy val guild: Option[Guild]   = guildChannel.map(guildChannel => Guild(guildChannel.getGuild))
+  lazy val permissionContainer    =
+    guildChannel.map(guildChannel => PermissionContainer(guildChannel.getPermissionContainer))
 
   def sendMessage(string: String): IO[Message]                    =
     channel.sendMessage(string).toIO.map(new Message(_))
@@ -42,6 +46,11 @@ class Channel(channel: MessageChannel):
   val lastHundred: IO[List[Message]]   =
     history.retrievePast(100).toIO.map(_.asScala.toList.reverse.map(new Message(_)))
   val lastMessage: IO[Option[Message]] = history.retrievePast(1).toIO.map(_.asScala.headOption.map(new Message(_)))
+
+  def canSendMessages(member: Member)      =
+    guildChannel.exists(guildChannel => member.member.hasPermission(guildChannel, Permission.MESSAGE_SEND))
+  def canSendMessages(role: Role): Boolean =
+    guildChannel.exists(guildChannel => role.role.hasPermission(guildChannel, Permission.MESSAGE_SEND))
 
   override def toString: String = mention
 

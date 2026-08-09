@@ -17,7 +17,7 @@ case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
     _.addOption[String]("text", "Text to check for a subsmash."),
   )
 
-  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
+  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Unit] =
     for
       text <- event.getOption[String]("text").toEitherT
 
@@ -38,7 +38,7 @@ case class CheckSubsmash(fitness: Fitness, config: SubsmashConfiguration)
               s"`$sanitised`, `${config.threshold}` is the minimum score needed for text to be considered a subsmash.",
           ),
         )
-    yield false
+    yield ()
 
   override val description: String =
     "Checks text for subsmashes and tells you the score of the word with the highest score."

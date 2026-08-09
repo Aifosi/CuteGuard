@@ -12,7 +12,8 @@ import cats.effect.{IO, Ref}
 import cats.syntax.option.*
 import org.typelevel.log4cats.Logger
 
-case class Given(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
+case class Given(events: Events)
+    extends SlashCommand with Options with AutoComplete[Action] with SlowResponse with FunnyCommand:
   override val fullCommand: String                                                     = "given"
   private val topDefault                                                               = 10
   override val options: List[PatternOption]                                            = List(

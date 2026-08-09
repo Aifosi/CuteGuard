@@ -13,7 +13,7 @@ import org.typelevel.log4cats.Logger
 import scala.util.matching.Regex
 
 case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String)
-    extends TextCommand with NoChannelLog with Hidden:
+    extends TextCommand with NoChannelLog with FunnyCommand with Hidden:
   val n = "(?:n|🇳)"
   val o = "[o0\uD83C\uDDF4]"
   val t = "[t7\uD83C\uDDF9]"
@@ -33,7 +33,7 @@ case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String)
     val stripped = stripAccents(event.content).toLowerCase
     pattern.findFirstIn(stripped).nonEmpty
 
-  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
+  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Unit] =
     lazy val embed = Embed(
       s"Lies - you're cute ${event.memberName}",
       "According to server rule 1, you are cute.\nJust accept it cutie! \uD83D\uDC9C",
@@ -50,4 +50,4 @@ case class NotCute(cooldown: Cooldown, preferences: Preferences, link: String)
       }
     }.flatMap(IO.whenA(_)(event.reply(embed).void))
       .start
-      .as(true)
+      .as(())

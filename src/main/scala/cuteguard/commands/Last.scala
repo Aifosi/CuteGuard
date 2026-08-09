@@ -17,7 +17,8 @@ import cats.effect.{IO, Ref}
 import cats.syntax.option.*
 import org.typelevel.log4cats.Logger
 
-case class Last(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
+case class Last(events: Events)
+    extends SlashCommand with Options with AutoComplete[Action] with SlowResponse with FunnyCommand:
   override val fullCommand: String                                                     = "last"
   override val options: List[PatternOption]                                            = List(
     _.addOption[Action]("action", "Text action you want the date for.", autoComplete = true),

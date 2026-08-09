@@ -122,9 +122,13 @@ object Cuteguard extends IOApp.Simple:
       given Transactor[IO]  = config.postgres.transactor
       given DiscordLogger  <- DiscordLogger(discordDeferred, config.discord)
 
-      guild          = EitherT.liftF(discordDeferred.get).flatMap(_.guildByID(config.guildID))
-      counterChannel = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.counterChannelID)).value.rethrow
-      quoteChannel   = EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.quoteChannelID)).value.rethrow
+      guild           = EitherT.liftF(discordDeferred.get).flatMap(_.guildByID(config.guildID))
+      counterChannel <-
+        EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.counterChannelID)).value.rethrow.memoize
+      quoteChannel   <-
+        EitherT.liftF(discordDeferred.get).flatMap(_.channelByID(config.quoteChannelID)).value.rethrow.memoize
+      funnyBotRole   <-
+        EitherT.liftF(discordDeferred.get).flatMap(_.roleByID(config.funnyBotRoleID)).value.rethrow.memoize
 
       users       = Users(guild)
       events      = Events(users)
@@ -146,7 +150,7 @@ object Cuteguard extends IOApp.Simple:
           quoteChannel,
         )
       given IORuntime = runtime
-      messageListener = new MessageListener(commander)
+      messageListener = new MessageListener(commander, funnyBotRole)
       _              <- loadQuadgrams(gramsDeferred)
       releaseDiscord <- acquireDiscordClient(discordDeferred, config.discord.token, messageListener)
       _              <- commander.registerSlashCommands(discordDeferred).start

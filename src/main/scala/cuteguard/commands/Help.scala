@@ -9,7 +9,7 @@ class Help(commands: List[AnyCommand]) extends SlashCommand:
   override val fullCommand: String = "help"
   override val description: String = "Shows help for existing commands"
 
-  override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Boolean] =
+  override def apply(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): IO[Unit] =
     val commandWithDescriptions = commands.collect { case patternCommand: PatternCommand[?, ?] =>
       patternCommand
     }.filter {
@@ -19,4 +19,4 @@ class Help(commands: List[AnyCommand]) extends SlashCommand:
     }.map(command =>
       s"**${if command.isInstanceOf[SlashCommand] then "/" else ""}${command.pattern}** - ${command.description}",
     )
-    event.replyEphemeral(commandWithDescriptions.mkString("\n")).as(true)
+    event.replyEphemeral(commandWithDescriptions.mkString("\n")).as(())

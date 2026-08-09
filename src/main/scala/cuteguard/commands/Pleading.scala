@@ -12,12 +12,12 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.matching.Regex
 case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String)
-    extends TextCommand with NoChannelLog with Hidden:
+    extends TextCommand with NoChannelLog with FunnyCommand with Hidden:
   override def pattern: Regex = ".*(<a?:\\w*plead\\w*:\\d+>|\uD83E\uDD7A).*".r
 
   override def matches(event: MessageEvent): Boolean = pattern.matches(stripAccents(event.content.toLowerCase))
 
-  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Boolean] =
+  override def apply(pattern: Regex, event: MessageEvent)(using Logger[IO]): IO[Unit] =
     lazy val embed = Embed(s"${event.memberName}, use your words cutie", link)
 
     List(
@@ -30,4 +30,4 @@ case class Pleading(cooldown: Cooldown, preferences: Preferences, link: String)
       }
     }.flatMap(IO.whenA(_)(event.reply(embed).void))
       .start
-      .as(true)
+      .as(())

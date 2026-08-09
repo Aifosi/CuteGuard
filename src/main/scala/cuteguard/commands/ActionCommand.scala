@@ -21,7 +21,7 @@ import org.typelevel.log4cats.Logger
 import java.time.{LocalDate, YearMonth}
 
 case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Action)
-    extends SlashCommand with Options with ErrorMessages with AutoCompleteInt:
+    extends SlashCommand with Options with ErrorMessages with AutoCompleteInt with FunnyCommand:
   override val description: String =
     s"Records a number of ${action.plural} you did, optionally add who gave them to you."
 
@@ -77,7 +77,7 @@ case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Ac
           )
         Option.unless(now == date)(date)
 
-  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
+  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Unit] =
     for
       counterChan <- EitherT.liftF(counterChannel)
       _           <- EitherT.leftWhen(
@@ -100,4 +100,4 @@ case class ActionCommand(events: Events, counterChannel: IO[Channel], action: Ac
                        show"${event.author.mention} just added $amount $actionText$givenBy done ${date.toRelativeTime}."
                      }
       _           <- EitherT.liftF(event.reply(message))
-    yield true
+    yield ()

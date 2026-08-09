@@ -16,7 +16,8 @@ import org.typelevel.log4cats.Logger
 
 import java.util.UUID
 
-case class HighScore(events: Events) extends SlashCommand with Options with AutoComplete[Action] with SlowResponse:
+case class HighScore(events: Events)
+    extends SlashCommand with Options with AutoComplete[Action] with SlowResponse with FunnyCommand:
   override val fullCommand: String                                                     = "highscore"
   private val topDefault                                                               = 10
   override val options: List[PatternOption]                                            = List(

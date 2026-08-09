@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType
 import org.typelevel.log4cats.Logger
 
 case class OptCommand(preferences: Preferences, out: Boolean)
-    extends SlashCommand with Options with ErrorMessages with AutoComplete[Action & CanOpt]:
+    extends SlashCommand with Options with ErrorMessages with AutoComplete[Action & CanOpt] with FunnyCommand:
   override val description: String =
     "Opts of tracking and receiving replies for chat actions."
 
@@ -30,7 +30,7 @@ case class OptCommand(preferences: Preferences, out: Boolean)
     "action" -> CanOpt.values.toList,
   ).fromSimplePure
 
-  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Boolean] =
+  override def run(pattern: SlashPattern, event: SlashCommandEvent)(using Logger[IO]): EitherT[IO, String, Unit] =
     for
       action       <- event.getOption[Action & CanOpt]("action").toEitherT
       preference   <- EitherT.liftF(preferences.find(event.author).value)
@@ -56,4 +56,4 @@ case class OptCommand(preferences: Preferences, out: Boolean)
       message       = if out then s"Cuteguard will no longer track or reply to your ${action.plural}!"
                       else s"Cuteguard will now once again track and reply to your ${action.plural}!"
       _            <- EitherT.liftF(event.replyEphemeral(message))
-    yield true
+    yield ()
