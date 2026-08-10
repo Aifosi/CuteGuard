@@ -12,6 +12,7 @@ import doobie.util.log.LogHandler
 import doobie.util.transactor.Transactor
 import fs2.io.file.{Files, Path}
 import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.hooks.EventListener
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.MemberCachePolicy
 import org.flywaydb.core.Flyway
@@ -24,20 +25,20 @@ object Cuteguard extends IOApp.Simple:
   private def acquireDiscordClient(
     discordDeferred: Deferred[IO, Discord],
     token: String,
-    messageListener: MessageListener,
+    listeners: EventListener*,
   )(using Logger[IO]): IO[IO[Unit]] =
-    val acquire = IO {
+    val acquire = IO.blocking {
       JDABuilder
         .createDefault(token)
         .setMemberCachePolicy(MemberCachePolicy.ALL)
         .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
-        .addEventListeners(messageListener)
+        .addEventListeners(listeners*)
         .build()
         .awaitReady()
     }
 
     Resource
-      .make(acquire)(jda => IO(jda.shutdown()))
+      .make(acquire)(jda => IO.blocking(jda.awaitShutdown()))
       .map(new Discord(_))
       .evalMap(discordDeferred.complete)
       .evalTap(_ => Logger[IO].info("Loaded JDA"))
@@ -68,7 +69,7 @@ object Cuteguard extends IOApp.Simple:
                         .baselineOnMigrate(true)
                         .load
                     }
-      migrations <- IO(flyway.migrate())
+      migrations <- IO.blocking(flyway.migrate())
       _          <- Logger[IO].debug(s"Ran ${migrations.migrationsExecuted} migrations.")
     yield ()
 
@@ -150,9 +151,10 @@ object Cuteguard extends IOApp.Simple:
           quoteChannel,
         )
       given IORuntime = runtime
+      activityMonitor = ActivityMonitor(users)
       messageListener = new MessageListener(commander, funnyBotRole)
       _              <- loadQuadgrams(gramsDeferred)
-      releaseDiscord <- acquireDiscordClient(discordDeferred, config.discord.token, messageListener)
+      releaseDiscord <- acquireDiscordClient(discordDeferred, config.discord.token, messageListener, activityMonitor)
       _              <- commander.registerSlashCommands(discordDeferred).start
       _              <- IO.never
       _              <- releaseDiscord

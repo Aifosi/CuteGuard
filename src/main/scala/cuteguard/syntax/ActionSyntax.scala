@@ -3,12 +3,11 @@ package cuteguard.syntax
 import cats.effect.IO
 import net.dv8tion.jda.api.requests.RestAction
 
-import scala.concurrent.Promise
-
 trait ActionSyntax:
   extension [A](action: RestAction[A])
-    def toIO: IO[A] = IO.fromFuture(IO {
-      val p = Promise[A]()
-      action.queue(p.success, p.failure)
-      p.future
-    })
+    def toIO: IO[A] = IO.async_[A] { cb =>
+      action.queue(
+        result => cb(Right(result)),
+        error => cb(Left(error)),
+      )
+    }

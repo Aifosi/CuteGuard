@@ -43,3 +43,9 @@ class Users(val guild: Maybe[Guild])(using Transactor[IO]) extends ModelReposito
 
   def findByDiscordID(discordID: DiscordID, label: Option[String] = None): OptionT[IO, CuteguardUser] =
     find(discordID.equalDiscordID)(label)
+
+  def addActivity(user: DiscordUser, label: Option[String] = None) =
+    for _ <- update()(fr"user_discord_id = ${user.discordID}")(label).recoverWith { case _ =>
+               insertOne(user.discordID)(columns*)(label)
+             }
+    yield ()
