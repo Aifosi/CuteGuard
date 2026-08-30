@@ -13,14 +13,31 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent
 import net.dv8tion.jda.api.events.message.GenericMessageEvent
+import net.dv8tion.jda.api.exceptions.ErrorResponseException
 import net.dv8tion.jda.api.hooks.EventListener
+import net.dv8tion.jda.api.requests.ErrorResponse
 
 class ActivityMonitor(users: Users)(using IORuntime) extends EventListener:
   override def onEvent(event: GenericEvent): Unit =
     val author: OptionT[IO, DiscordUser] = event match
       // All message or reaction send, edit, delete and adding or removing votes from polls
       case event: GenericMessageEvent           =>
-        OptionT.liftF(event.getChannel.retrieveMessageById(event.getMessageIdLong).toIO.map(new Message(_).author))
+        OptionT {
+          event.getChannel
+            .retrieveMessageById(event.getMessageIdLong)
+            .toIO
+            .map { message =>
+              Some(new Message(message).author)
+            }
+            .recover {
+              // Message deleted
+              case exception: ErrorResponseException if exception.getErrorResponse == ErrorResponse.UNKNOWN_MESSAGE =>
+                None
+              // Channel deleted
+              case exception: ErrorResponseException if exception.getErrorResponse == ErrorResponse.UNKNOWN_CHANNEL =>
+                None
+            }
+        }
       // All slash commands, buttons or menu interaction
       case event: GenericInteractionCreateEvent =>
         OptionT.pure(new DiscordUser(event.getUser))

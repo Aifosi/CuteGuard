@@ -32,7 +32,7 @@ class Quote(quoteChannel: IO[Channel]) extends MessageInteractionCommand with Fu
           quote         <- quoteChannel.sendEmbed(embed)
           _             <-
             event.reply(
-              s"${event.message.author.mention},$authorName quoted [this message](${event.message.jumpUrl}), you can find it [here](${quote.jumpUrl})",
+              s"${event.message.author.mention}, $authorName quoted [this message](${event.message.jumpUrl}), you can find it [here](${quote.jumpUrl})",
             )
         yield ()
     }

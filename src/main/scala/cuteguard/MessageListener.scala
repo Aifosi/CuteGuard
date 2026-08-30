@@ -93,7 +93,7 @@ class MessageListener(
                                   .as(Result.Stop)
                               case Result.Skip     =>
                                 Logger[IO]
-                                  .debug(s"Matched $command but skipping cause in a not FunnyChannel")
+                                  .debug(s"Matched $command but skipping because not in a Funny Channel")
                                   .as(Result.Continue)
                               case Result.Stop     => IO.pure(Result.Stop)
             yield result
